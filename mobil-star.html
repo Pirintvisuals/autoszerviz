@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Client sample. Mobil Star, hivatalos Bosch Car Service partner,
+       Újhegyi út 7., 1108 Budapest. Tel +36 1 433 5761,
+       ujhegyi@mobilstar.hu, mobilstar.hu. 14 ezer követő.
+
+       Saját oldaláról, szó szerint a felsorolt szolgáltatások:
+       fék (fékbetét, féktárcsa, fékfolyadék), futómű javítás, kuplungcsere,
+       gumicsere, diagnosztikai kiolvasás és élő adatok elemzése, hibakód
+       törlés, vásárlás előtti/utáni átvizsgálás, akkumulátor mérés és csere,
+       kipufogó javítás, vezérlés csere, motorfelújítás, karosszéria javítás,
+       műszaki vizsga, eredetvizsga.
+
+       Why this demo prices a KUPLUNGCSERE: they list it under two separate
+       headings on their own page, it is their biggest routine ticket, and it
+       carries the single most recognisable true upsell in the trade, the
+       kétömegű lendkerék. The váltó is already off the car, so the flywheel
+       goes in for parts cost only; done separately later it is the whole
+       labour bill again. Every mechanic knows this. Seeing an automated
+       quote raise it unprompted is the moment the page stops looking like a
+       toy.
+
+       The alvázszám beat is stronger here than on the Eki demo: on a 2.0 TDI
+       the alvázszám settles both the clutch diameter AND whether the car is
+       kézi váltós or DSG, which is a completely different job. So the
+       question visibly prevents a wrong quote rather than just sounding
+       thorough.
+
+       Second flow routes into their OWN advertised service, by name:
+       diagnosztikai kiolvasás and élő adatok elemzése, rather than a generic
+       "megnézzük". They sell diagnostics, so the branch that refuses to price
+       a symptom sends work straight into a service they already charge for.
+
+       Theme taken off their real logo: Bosch blue base, Bosch red accent.
+       Register: tegezés towards the customer, magázás in everything the owner
+       reads. No em dashes.
+
+       Data-only file. Engine and styles live in /quote-agent.js and /quote-agent.css. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. A saját logójukról: Bosch kék alap, Bosch piros kiemelés.
+const THEME = {
+  bg:'#051d31', dark:'#005691', mid:'#2b7cb3', brand:'#e2001a', bright:'#f4372a',
+  dot:'#ffb3ad', chatBg:'#fff8f7', tint:'#fbd9d5', tint2:'#fdeceb', line:'#f4cbc6',
+  ink:'#005691', inkSoft:'#c1121f', ring:'rgba(226,0,26,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG
+const CONFIG = {
+  brand: {
+    name: 'Mobil Star',
+    // Hero subtitle = a saját oldalukon felsorolt szolgáltatások.
+    sub: 'Fék, futómű, kuplung, gumi, diagnosztika, műszaki vizsga',
+    tagline: 'Hivatalos Bosch Car Service partner, Budapest, Újhegyi út 7.',
+    initial: 'M',
+    logoSrc: 'mobil-star-logo.jpg',
+    fbHandle: '',
+    online: 'Online · Másodperceken belül válaszolok',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézd meg, hogyan működik ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Küldés a tulajdonosnak →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy a saját oldalán éjjel-nappal így készüljenek el az árajánlatai Ön helyett?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  leadTime: '11:19',
+  ownerBenefit: 'Ez az árajánlat 11:19-kor írta meg magát Ön helyett, miközben épp egy autó alatt volt az emelőn. Nem egy telefonszám vár Önre estére, hanem egy kész ajánlat, alvázszámmal és alkatrész-választással együtt.',
+  labels: {
+    titleSuffix: 'Azonnali árajánlat (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppints a chat buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézd',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta beszélgetés, automatikusan lejátszva',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Itt a becslésed',
+    estimateIntroSuffix: 'Így néznek ki a számok:',
+    estimatedTotal: 'Becsült összesen',
+    rangeSuffix: 'tartomány',
+    timing: 'Átfutási idő',
+    estimatedQuote: 'Becsült árajánlat',
+    ownerNotifSample: 'Tulajdonosi értesítés · minta',
+    howReceives: 'Így értesül róla {name}',
+    newLeadPrefix: 'Új',
+    leadLocation: 'Érdeklődő helye',
+    calculatedQuote: 'Kiszámított árajánlat',
+    jobDetails: 'Munka részletei',
+    confirmationEmail: 'Az ügyfél automatikus visszaigazoló emailt kapott',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+  },
+}
+
+// 3. MSGS
+const MSGS = [
+  // ── 1. nyitás ──
+  { r:'agent', t:'Szia! Árajánlatot szeretnél kérni valamilyen munkára?' },
+  { r:'user',  t:'Szia! Kuplungcserére szeretnék árat kérni' },
+
+  // ── 2. autó: márka, típus, évjárat, motor ──
+  { r:'agent', t:'Rendben. Milyen autóról van szó? Márka, típus, évjárat és motor.' },
+  { r:'user',  t:'VW Passat B6, 2008-as, 2.0 TDI' },
+
+  // ── 3. alvázszám. Itt nem csak alaposnak hangzik: az alvázszám dönti el a
+  //       kuplung átmérőjét ÉS azt, hogy kézi váltós vagy DSG, ami más munka.
+  { r:'agent', t:'Köszönöm. Meg tudod adni az alvázszámot? Abból látom a pontos kuplungátmérőt, és azt is, hogy kézi váltós vagy DSG a kocsi, mert az két teljesen más munka és két teljesen más ár.' },
+  { r:'user',  t:'WVWZZZ3CZ8E123456' },
+
+  // ── 4. futásteljesítmény ──
+  { r:'agent', t:'Megvan, ez a kézi váltós, 240-es kuplunggal. Mennyi van benne kilométerben?' },
+  { r:'user',  t:'Kb 243 000 km' },
+
+  // ── 5. mi a hiba. Konkrét, felismerhető tünet, ezért megy tovább pontos árig.
+  //       (A bizonytalan tünet ága lentebb, a második folyamban.)
+  { r:'agent', t:'Köszönöm. Mit tapasztalsz rajta?' },
+  { r:'user',  t:'Melegen megcsúszik emelkedőn, és bűzlik utána a kuplung' },
+
+  // ── 6. alkatrész-kategória, egysoros ár-következménnyel ──
+  { r:'agent', t:'Ez klasszikus elkopott kuplung. Alkatrészben mivel számoljak: utángyártott, gyári vagy prémium? A prémium nálunk a LuK vagy a Sachs, vagyis ugyanaz, ami gyárilag is benne volt, ez kb 60 ezerrel több, viszont erre adjuk a leghosszabb garanciát.' },
+  { r:'user',  t:'Akkor legyen a LuK' },
+
+  // ── 7. szakértelem-pillanat. A kétömegű lendkerék a szakma legismertebb
+  //       igaz felvetése, és ezen a ponton tiszta pénz a szerviznek.
+  { r:'agent', t:'Egy dolgot érdemes tudni. Ennyi kilométernél a kétömegű lendkereket is érdemes vele együtt cserélni, mert a váltó úgyis le van véve, így csak az alkatrész ára jön rá. Ha később külön kell megcsinálni, a teljes munkadíjat még egyszer ki kell fizetni.' },
+  { r:'user',  t:'Ezt nem tudtam. Akkor menjen a lendkerék is' },
+
+  // ── 8. mikorra kell, mennyire sürgős ──
+  { r:'agent', t:'Rendben. Mikorra kellene, mennyire sürgős?' },
+  { r:'user',  t:'Amint lehet, mert így félek vele elindulni' },
+
+  // ── 9. elérhetőség: név, telefon, email, rendszám ──
+  { r:'agent', t:'Elkérhetem a neved?' },
+  { r:'user',  t:'Varga Péter' },
+  { r:'agent', t:'Köszönöm, Péter. Milyen számon érlek el a legkönnyebben?' },
+  { r:'user',  t:'+36 30 726 1184' },
+  { r:'agent', t:'És az email címed?' },
+  { r:'user',  t:'varga.peter84@gmail.com' },
+  { r:'agent', t:'A rendszámot is elkérem, azon tartjuk nyilván az autót és az előzményeit.' },
+  { r:'user',  t:'NKF-882' },
+  { r:'agent', t:'Köszönöm, Péter, már állítom is össze a tájékoztató árat.' },
+  { r:'estimate' },
+
+  // ── Második, rövid folyam: nincs pontos hiba, ezért nincs ár sem.
+  //       A saját, meghirdetett diagnosztikai szolgáltatásukba fut bele.
+  { r:'divider', t:'Másik eset: amikor nincs pontos hiba' },
+  { r:'agent', t:'Szia! Árajánlatot szeretnél kérni valamilyen munkára?' },
+  { r:'user',  t:'Világít a motorhiba lámpa, és néha rángat gyorsításnál' },
+  { r:'agent', t:'Erre látatlanban nem mondok árat, mert ugyanez a tünet lehet izzítógyertya, befecskendező vagy szelepes hiba, és sok százezer forint a különbség köztük. Milyen autóról van szó és mennyi van benne?' },
+  { r:'user',  t:'Opel Insignia 2.0 CDTI, 2012-es, kb 198 000 km' },
+  { r:'agent', t:'Köszönöm. Erre diagnosztikát ajánlok: kiolvassuk a hibakódot, és élő adaton nézzük meg, mit csinál a motor menet közben, utána kapsz pontos árat a javításra. A diagnosztika 12 000 Ft, és ha nálunk készül el a javítás, beleszámítjuk a munkadíjba.' },
+  { r:'user',  t:'Ez korrekt. Mikor tudnátok megnézni?' },
+  { r:'agent', t:'Kedd reggel 8-ra vagy szerda 13 órára tudlak beírni. Melyik a jobb?' },
+  { r:'user',  t:'Kedd reggel jó' },
+  { r:'agent', t:'Beírtalak keddre 8-ra. Már csak a rendszámod és egy telefonszám kell, és szólok a kollégáknak, hogy számítsanak rád.' },
+]
+
+// 4. EST. PLACEHOLDER: az óradíj és az alkatrészárak a szerviz saját listája
+// szerint cserélendők. Az itteniek 2025-ös budapesti márkaszerviz-közeli szint.
+const EST = {
+  lower: 335_000, mid: 353_000, upper: 380_000,
+  status: 'PRIORITY',
+  items: [
+    { label:'Alkatrész: kuplungszett + kétömegű lendkerék (LuK)', amt: 245_000 },
+    { label:'Munkadíj: 5 óra × 18 000 Ft óradíj',                 amt:  90_000 },
+    { label:'Váltóolaj, apróanyag',                               amt:  18_000 },
+  ],
+  note: 'Az alvázszám alapján beazonosított alkatrészekkel számolva.',
+  customer: {
+    'Name':'Varga Péter',
+    'Phone':'+36 30 726 1184',
+    'Email':'varga.peter84@gmail.com',
+  },
+  firstName: 'Péter',   // magyar névsorrend, különben vezetéknéven köszönne
+  timingShort: '1-2 munkanap',
+  jobTags: [
+    'VW Passat B6 2.0 TDI, 2008',
+    'Alvázszám: WVWZZZ3CZ8E123456',
+    'Kézi váltós, 240-es kuplung',
+    '243 000 km',
+    'Kuplungszett + kétömegű lendkerék',
+    'Rendszám: NKF-882',
+  ],
+  urgency: { label:'Kért időpont', value:'Amint lehet', note:'Melegen csúszik, nem mer vele elindulni' },
+  decision: { label:'Alkatrész-kategória', value:'Prémium (LuK)', note:'Utángyártottal kb 60 000 Ft-tal olcsóbb, rövidebb garanciával.' },
+  jobValue: { label:'Munka értéke', value:'353 000 Ft · 5 óra', note:'Lendkerékkel együtt, egy emelőt köt le egy napra.' },
+  scoreLabel: 'munka',
+  clientCity: 'Budapest', clientZip: '1106',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
