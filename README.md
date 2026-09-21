@@ -11,6 +11,12 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | `quote-agent.css` | a stílusok |
 | `index.html` | átirányítás a `/autoszerviz` oldalra |
 
+## Élő minták
+
+| szerviz | oldal |
+| --- | --- |
+| Eki Autó Kft., Pécs | `/eki-auto` |
+
 Amiben eltér a burkoló demótól:
 
 - **kilenc kérdés**, mert a DM azt ígéri, hogy addig kérdez, amíg meg nem van minden
