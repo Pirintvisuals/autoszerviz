@@ -17,6 +17,7 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | --- | --- |
 | Eki Autó Kft., Pécs | `/eki-auto` |
 | Mobil Star (Bosch Car Service), Budapest | `/mobil-star` |
+| Rapid Autószerviz, Szolnok | `/rapid-autoszerviz` |
 
 Amiben eltér a burkoló demótól:
 

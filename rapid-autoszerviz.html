@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Client sample. Rapid Autószerviz, Százados u. 1., 5000 Szolnok.
+       Tel 30/571-3537 és 70/904-5584, rapidproservice1@gmail.com.
+
+       Their page claims NO specialty. The entire bio is one sentence:
+       "Várjuk meglévő és új céges- és magán Ügyfeleinket teljeskörű
+       autójavításra." Two openers in this batch died on a service claim that
+       did not hold (futómű-beállítás at Eki and at German Car), so nothing
+       here invents one. Everything below comes out of that one sentence.
+
+       The hook is CÉGES ÜGYFELEK, which they put first in their own bio and
+       which no other demo in this gallery touches. For a fleet customer the
+       quote is a different object: it gets forwarded to someone else for
+       approval, the invoice goes to the company, and the number that matters
+       is the nettó, not the bruttó. So this demo asks a question none of the
+       others ask, "céges vagy magánautó", and the answer changes the paper
+       the customer walks away with.
+
+       Priced job: front féktárcsa + fékbetét on a VW Caddy 2.0 TDI, the
+       archetypal Hungarian céges car. Brakes because they are the highest
+       frequency job on a fleet car, they fall squarely inside "teljeskörű
+       autójavítás", and they carry a true upsell (fékfolyadék, since the
+       system is open and bled anyway) that costs the customer little and
+       earns the shop real money.
+
+       Second flow unchanged in shape: a vague symptom gets no price, it gets
+       a diagnostic slot.
+
+       Register: tegezés towards the customer, magázás in everything the owner
+       reads. No em dashes.
+
+       Logo: drop the file in as rapid-logo.jpg. Until then the engine falls
+       back to the "R" mark on its own.
+
+       Data-only file. Engine and styles live in /quote-agent.js and /quote-agent.css. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. PLACEHOLDER: ha megjön a logó, a színeket arról kell levenni.
+// Addig műhely-grafit, gyors, hűvös kék kiemeléssel a "Rapid" névhez.
+const THEME = {
+  bg:'#0c131c', dark:'#16273a', mid:'#2f5f8f', brand:'#0d7fd1', bright:'#38a0e8',
+  dot:'#8fd0f5', chatBg:'#f6fbff', tint:'#d5eafa', tint2:'#e9f4fd', line:'#c2ddf2',
+  ink:'#16273a', inkSoft:'#0b6cb3', ring:'rgba(13,127,209,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG
+const CONFIG = {
+  brand: {
+    name: 'Rapid Autószerviz',
+    // A saját bemutatkozásuk egyetlen mondatából, nem találgatva.
+    sub: 'Teljeskörű autójavítás, céges és magán ügyfeleknek',
+    tagline: 'Szolnok, Százados utca 1.',
+    initial: 'R',
+    logoSrc: 'rapid-logo.jpg',
+    fbHandle: '',
+    online: 'Online · Másodperceken belül válaszolok',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézd meg, hogyan működik ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Küldés a tulajdonosnak →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy a saját oldalán éjjel-nappal így készüljenek el az árajánlatai Ön helyett?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  leadTime: '11:19',
+  ownerBenefit: 'Ez az árajánlat 11:19-kor írta meg magát Ön helyett, miközben épp egy autó alatt volt az emelőn. Nem egy telefonszám vár Önre estére, hanem egy kész ajánlat, alvázszámmal, nettó árral és alkatrész-választással együtt.',
+  labels: {
+    titleSuffix: 'Azonnali árajánlat (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppints a chat buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézd',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta beszélgetés, automatikusan lejátszva',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Itt a becslésed',
+    estimateIntroSuffix: 'Így néznek ki a számok:',
+    estimatedTotal: 'Becsült összesen',
+    rangeSuffix: 'tartomány',
+    timing: 'Átfutási idő',
+    estimatedQuote: 'Becsült árajánlat',
+    ownerNotifSample: 'Tulajdonosi értesítés · minta',
+    howReceives: 'Így értesül róla {name}',
+    newLeadPrefix: 'Új',
+    leadLocation: 'Érdeklődő helye',
+    calculatedQuote: 'Kiszámított árajánlat',
+    jobDetails: 'Munka részletei',
+    confirmationEmail: 'Az ügyfél automatikus visszaigazoló emailt kapott',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+  },
+}
+
+// 3. MSGS
+const MSGS = [
+  // ── 1. nyitás ──
+  { r:'agent', t:'Szia! Árajánlatot szeretnél kérni valamilyen munkára?' },
+  { r:'user',  t:'Igen, első féktárcsa és fékbetét cserére kérnék árat' },
+
+  // ── 2. autó: márka, típus, évjárat, motor ──
+  { r:'agent', t:'Rendben. Milyen autóról van szó? Márka, típus, évjárat és motor.' },
+  { r:'user',  t:'VW Caddy, 2017-es, 2.0 TDI' },
+
+  // ── 3. alvázszám, a saját indoklásával ──
+  { r:'agent', t:'Köszönöm. Meg tudod adni az alvázszámot? Abból látom a pontos féktárcsa átmérőt, mert Caddyhez kétféle is készült, és a kettő között több ezer forint az alkatrész ára.' },
+  { r:'user',  t:'WV2ZZZ2KZHX123456' },
+
+  // ── 4. futásteljesítmény ──
+  { r:'agent', t:'Megvan, ez a nagyobb, 312-es tárcsás kivitel. Mennyi van benne kilométerben?' },
+  { r:'user',  t:'Kb 212 000 km, céges autó, sokat van úton' },
+
+  // ── 5. mi a hiba ──
+  { r:'agent', t:'Köszönöm. Mit tapasztalsz rajta, vagy kopás miatt cserélnéd?' },
+  { r:'user',  t:'Fékezéskor rezeg a kormány, és a betét is a végét járja' },
+
+  // ── 6. céges vagy magán. Ez az a kérdés, ami a bemutatkozásukból jön, és
+  //       amit egyik másik demó sem kérdez: más papír kell a végén.
+  { r:'agent', t:'Értem, rezgő kormány általában elhúzott tárcsa. Mivel céges autót említettél: a számlát a cég nevére kérjétek, vagy magánszemélyre? Céges számla esetén nettó árat írok, és rámegy a 27 százalék ÁFA külön soron, hogy a könyvelés is lássa.' },
+  { r:'user',  t:'Céges lesz, a cég nevére kérjük' },
+
+  // ── 7. alkatrész-kategória, egysoros ár-következménnyel ──
+  { r:'agent', t:'Rendben. Alkatrészben mivel számoljak: utángyártott, gyári vagy prémium? Céges autónál a gyári minőségűt szoktuk javasolni, ez kb 22 ezerrel több a szetten, viszont ennyi futásnál nem kell újra szétszedni fél év múlva.' },
+  { r:'user',  t:'Akkor legyen a gyári minőségű' },
+
+  // ── 8. szakértelem-pillanat. Igaz, olcsó a vevőnek, pénz a szerviznek.
+  { r:'agent', t:'Egy dolgot érdemes tudni. Ha már szét van szedve a fék, a fékfolyadék cseréjét is érdemes vele együtt megcsinálni, mert a rendszert úgyis légteleníteni kell. Külön alkalommal ez megint emelő és megint munkadíj, így viszont csak az anyag ára jön rá.' },
+  { r:'user',  t:'Jó, akkor menjen a fékfolyadék is' },
+
+  // ── 9. mikorra kell, mennyire sürgős ──
+  { r:'agent', t:'Rendben. Mikorra kellene, mennyire sürgős?' },
+  { r:'user',  t:'Jövő hét elején, akkor tudjuk nélkülözni a kocsit' },
+
+  // ── 10. elérhetőség: név, telefon, email, rendszám ──
+  { r:'agent', t:'Elkérhetem a neved?' },
+  { r:'user',  t:'Halász Zoltán' },
+  { r:'agent', t:'Köszönöm, Zoltán. Milyen számon érlek el a legkönnyebben?' },
+  { r:'user',  t:'+36 20 318 6027' },
+  { r:'agent', t:'És az email címed? Céges számlánál oda küldjük majd az ajánlatot, hogy tovább tudd adni.' },
+  { r:'user',  t:'halasz.zoltan@kkvlogisztika.hu' },
+  { r:'agent', t:'A rendszámot is elkérem, azon tartjuk nyilván az autót és az előzményeit.' },
+  { r:'user',  t:'SZK-604' },
+  { r:'agent', t:'Köszönöm, Zoltán, már állítom is össze a tájékoztató árat.' },
+  { r:'estimate' },
+
+  // ── Második, rövid folyam: nincs pontos hiba, ezért nincs ár sem ──
+  { r:'divider', t:'Másik eset: amikor nincs pontos hiba' },
+  { r:'agent', t:'Szia! Árajánlatot szeretnél kérni valamilyen munkára?' },
+  { r:'user',  t:'Valami zörög alul, ha rossz úton megyek, és néha beleránt a kormányba' },
+  { r:'agent', t:'Erre látatlanban nem mondok árat, mert ez lehet stabilizátor rúd, szilent vagy gömbfej, és sok tízezer forint a különbség köztük. Milyen autóról van szó és mennyi van benne?' },
+  { r:'user',  t:'Skoda Octavia 1.6 TDI, 2014-es, kb 230 000 km' },
+  { r:'agent', t:'Köszönöm. Erre átvizsgálást ajánlok: emelőre tesszük, átnézzük a futóművet, és utána kapsz pontos árat a javításra. Az átvizsgálás 8 000 Ft, és ha nálunk készül el a javítás, beleszámítjuk a munkadíjba.' },
+  { r:'user',  t:'Ez korrekt. Mikor tudnátok megnézni?' },
+  { r:'agent', t:'Csütörtök reggel 8-ra vagy péntek 13 órára tudlak beírni. Melyik a jobb?' },
+  { r:'user',  t:'Csütörtök reggel jó' },
+  { r:'agent', t:'Beírtalak csütörtökre 8-ra. Már csak a rendszámod és egy telefonszám kell, és szólok a kollégáknak, hogy számítsanak rád.' },
+]
+
+// 4. EST. PLACEHOLDER: az óradíj és az alkatrészárak a szerviz saját listája
+// szerint cserélendők. Nettó árak, mert céges ügyfélről szól a folyam.
+const EST = {
+  lower: 92_000, mid: 98_000, upper: 108_000,
+  status: 'PRIORITY',
+  items: [
+    { label:'Alkatrész: első féktárcsa pár + fékbetét szett (gyári minőségű)', amt: 58_000 },
+    { label:'Munkadíj: 2 óra × 14 000 Ft óradíj',                              amt: 28_000 },
+    { label:'Fékfolyadék csere, légtelenítés, apróanyag',                      amt: 12_000 },
+  ],
+  note: 'Az alvázszám alapján beazonosított alkatrészekkel, nettó árakkal számolva. A céges számlára 27% ÁFA jön rá.',
+  customer: {
+    'Name':'Halász Zoltán',
+    'Phone':'+36 20 318 6027',
+    'Email':'halasz.zoltan@kkvlogisztika.hu',
+  },
+  firstName: 'Zoltán',   // magyar névsorrend, különben vezetéknéven köszönne
+  timingShort: '1 munkanap',
+  jobTags: [
+    'VW Caddy 2.0 TDI, 2017',
+    'Alvázszám: WV2ZZZ2KZHX123456',
+    '312-es féktárcsa',
+    '212 000 km',
+    'Fékfolyadék csere vele együtt',
+    'Rendszám: SZK-604',
+  ],
+  urgency: { label:'Kért időpont', value:'Jövő hét eleje', note:'Céges autó, akkor tudják nélkülözni' },
+  decision: { label:'Alkatrész és számla', value:'Gyári minőségű', note:'Számla a cég nevére, nettó ár + 27% ÁFA.' },
+  jobValue: { label:'Munka értéke', value:'98 000 Ft + ÁFA · 2 óra', note:'Céges ügyfél, flottából jöhet még autó.' },
+  scoreLabel: 'munka',
+  clientCity: 'Szolnok', clientZip: '5000',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
