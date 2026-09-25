@@ -18,8 +18,18 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | Eki Autó Kft., Pécs | `/eki-auto` |
 | Mobil Star (Bosch Car Service), Budapest | `/mobil-star` |
 | Rapid Autószerviz, Szolnok | `/rapid-autoszerviz` |
+| BLT Szerviz Kft., Szentendre (szerelői verzió) | `/blt-szerviz` |
 
-Amiben eltér a burkoló demótól:
+## Szerelői verzió (a sablon ezt adja, 2026-09-25-től)
+
+Az `autoszerviz.html` most azt mutatja, ahogy a **szerelő** használja: megadja az
+alvázszámot, beírja, mit talált, az asszisztens csak azt kérdezi, ami még
+hiányzik, a végén pedig egy kész, odaadható árajánlat jön ki. Nincs név,
+telefonszám, email. A motorban ezt a `CONFIG.mode = 'mechanic'` kapcsolja be
+(az `EST.vehicle`, `EST.finding`, `EST.quoteNo` mezőkkel). Az első három
+élő minta még a régi, ügyfél felőli verzió, azokhoz nem nyúltunk.
+
+A régi (ügyfél felőli) verzió, amiben eltér a burkoló demótól:
 
 - **kilenc kérdés**, mert a DM azt ígéri, hogy addig kérdez, amíg meg nem van minden
 - **alvázszám**, a saját indoklásával: egy típushoz több változat is tartozik

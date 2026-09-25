@@ -24,10 +24,16 @@ function esc(s) {
   if (!s && s !== 0) return ''
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 }
+// Mechanic mode: the person typing is the mechanic, not a customer. No contact
+// details are collected, and the finale is a finished estimate sheet instead
+// of an owner lead card. Older demos don't set CONFIG.mode and are unaffected.
+const MECHANIC = CONFIG.mode === 'mechanic'
+
 // Hungarian name order puts the surname first, so the default "first token"
 // guess greets the customer by surname. Set EST.firstName to override it.
-const firstName   = EST.firstName != null ? EST.firstName : ((EST.customer.Name || '').trim().split(/\s+/)[0] || '')
-const leadInitial = (EST.customer.Name || '?').trim().charAt(0).toUpperCase()
+const custName    = (EST.customer && EST.customer.Name) || ''
+const firstName   = EST.firstName != null ? EST.firstName : (custName.trim().split(/\s+/)[0] || '')
+const leadInitial = (custName || '?').trim().charAt(0).toUpperCase()
 // EST.budget is optional. Trades where nobody has a "budget" in mind (a broken
 // clutch, a failed boiler) omit it and use EST.decision instead — see buildModal.
 const budgetMatch = EST.budget ? (EST.mid >= EST.budget.low && EST.mid <= EST.budget.high) : false
@@ -70,6 +76,15 @@ const L = Object.assign({
   confirmationEmail: 'The customer received an automatic confirmation email',
   bookCallFallback: 'Book a call →',
   logoAlt: '{name} logo',
+  // mechanic mode only (buildQuoteSheet)
+  sheetKicker: 'Finished estimate · sample',
+  sheetTitle: 'Ready to hand to the customer',
+  sheetDoc: 'Estimate',
+  sheetVehicle: 'Vehicle',
+  sheetFinding: "Mechanic's finding",
+  sheetItems: 'Parts and labour',
+  sheetTotal: 'Total',
+  sheetNoContact: 'No name, phone number or email needed.',
 }, CONFIG.labels || {})
 
 // ── Playback state ──────────────────────────────────────────────────────────
@@ -331,7 +346,7 @@ function buildCostMessage() {
       <div>
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink);font-weight:700;margin-bottom:2px">${esc(L.estimatedTotal)}</div>
         <div style="font-size:24px;font-weight:900;color:var(--dark);letter-spacing:-1px;line-height:1">${money(EST.mid)}</div>
-        <div style="font-size:10px;color:#6b7280;margin-top:2px">${money(EST.lower)} – ${money(EST.upper)} ${esc(L.rangeSuffix)}</div>
+        ${EST.lower != null ? `<div style="font-size:10px;color:#6b7280;margin-top:2px">${money(EST.lower)} – ${money(EST.upper)} ${esc(L.rangeSuffix)}</div>` : ''}
       </div>
       <div style="background:rgba(0,0,0,0.04);border:1px solid var(--line);border-radius:8px;padding:4px 10px;flex-shrink:0;text-align:center">
         <div style="font-size:9px;color:var(--ink);font-weight:700;text-transform:uppercase;letter-spacing:.08em">${esc(L.timing)}</div>
@@ -363,6 +378,7 @@ function buildSendBar() {
 
 // ── Owner notification modal ────────────────────────────────────────────────
 function buildModal() {
+  if (MECHANIC) return buildQuoteSheet()
   const overlay = document.createElement('div')
   overlay.className = 'modal-overlay'
   overlay.onclick = e => { if (e.target === overlay) { showModal = false; render() } }
@@ -545,6 +561,106 @@ function buildModal() {
       <div style="display:flex;align-items:center;justify-content:center;gap:7px;background:var(--tint2);border:1px solid var(--line);border-radius:12px;padding:10px 16px">
         <span style="font-size:14px">✉️</span>
         <span style="font-size:12px;color:var(--ink);font-weight:600">${esc(L.confirmationEmail)}</span>
+      </div>
+    </div>
+    ${ctaBlock}`
+
+  card.querySelector('#modalClose').onclick = () => { showModal = false; render() }
+  overlay.appendChild(card)
+  return overlay
+}
+
+// ── Mechanic mode finale: the estimate sheet the mechanic hands over ────────
+// Built from EST.vehicle ([label, value] rows), EST.finding (what the mechanic
+// found), EST.items and EST.mid. Deliberately has no customer block: the
+// estimate belongs to the car, nobody had to give a name, phone or email.
+function buildQuoteSheet() {
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+  overlay.onclick = e => { if (e.target === overlay) { showModal = false; render() } }
+  const b = CONFIG.brand
+
+  const vehicleRows = (EST.vehicle || []).map(([k, v]) => `
+    <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:3px 0">
+      <span style="color:#6b7280">${esc(k)}</span>
+      <span style="font-weight:700;color:#111827;text-align:right">${esc(v)}</span>
+    </div>`).join('')
+
+  const itemRows = EST.items.map(item => `
+    <div style="display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:#374151;padding:6px 0;border-bottom:1px solid var(--line)">
+      <span>${esc(item.label)}</span>
+      <span style="font-weight:700;color:#111827;white-space:nowrap">${money(item.amt)}</span>
+    </div>`).join('')
+
+  const section = (title, body) => `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--line)">
+      <div style="font-size:9.5px;color:#9ca3af;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:6px">${esc(title)}</div>
+      ${body}
+    </div>`
+
+  const ctaBlock = CONFIG.calendly ? `
+    <div style="padding:6px 18px 20px">
+      <div style="background:linear-gradient(135deg,var(--dark),var(--mid));border-radius:14px;padding:16px 18px;text-align:center">
+        <div style="font-size:13px;font-weight:800;color:#fff;letter-spacing:-0.2px">${esc(CONFIG.ctaTitle || '')}</div>
+        <div style="font-size:12px;color:#cfe7d8;margin:4px 0 12px;line-height:1.45">${esc(CONFIG.ctaText || '')}</div>
+        <a href="${esc(CONFIG.calendly)}" target="_blank" rel="noopener"
+           style="display:inline-block;background:linear-gradient(135deg,var(--cta),var(--cta2));color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:11px 22px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,0.25)">${esc(CONFIG.ctaButton || L.bookCallFallback)}</a>
+      </div>
+    </div>` : ''
+
+  const card = document.createElement('div')
+  card.className = 'modal-card'
+  card.innerHTML = `
+    <div style="background:linear-gradient(135deg,var(--dark),var(--mid),var(--brand));padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:22px 22px 0 0">
+      <div>
+        <div style="font-size:10px;color:#cfe7d8;text-transform:uppercase;letter-spacing:.14em;font-weight:600;margin-bottom:3px">${esc(L.sheetKicker)}</div>
+        <div style="color:#fff;font-weight:800;font-size:15px;letter-spacing:-0.3px">${esc(L.sheetTitle)}</div>
+      </div>
+      <button id="modalClose" style="background:rgba(255,255,255,0.12);border:none;color:#fff;width:34px;height:34px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;line-height:1">✕</button>
+    </div>
+
+    ${CONFIG.ownerBenefit ? `
+    <div style="margin:16px 18px 0;padding:11px 14px;background:linear-gradient(135deg,var(--tint),var(--tint2));border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:17px;line-height:1">⏱️</span>
+      <span style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.4">${esc(CONFIG.ownerBenefit)}</span>
+    </div>` : ''}
+
+    <div style="padding:14px 18px 6px">
+      <div style="background:#fff;border:1.5px solid var(--line);border-radius:16px;overflow:hidden">
+
+        <div style="padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:var(--chat-bg)">
+          <div>
+            <div style="font-size:15px;font-weight:800;color:#111827;letter-spacing:-0.3px">${esc(b.name)}</div>
+            <div style="font-size:11.5px;color:#6b7280;margin-top:2px">${esc(b.tagline)}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:9.5px;color:#9ca3af;text-transform:uppercase;letter-spacing:.1em;font-weight:700">${esc(L.sheetDoc)}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink-soft)">${esc(EST.quoteNo || '')}</div>
+          </div>
+        </div>
+
+        ${section(L.sheetVehicle, vehicleRows)}
+        ${EST.finding ? section(L.sheetFinding, `<div style="font-size:12.5px;color:#374151;line-height:1.5">${esc(EST.finding)}</div>`) : ''}
+        ${section(L.sheetItems, itemRows)}
+
+        <div style="padding:14px 16px;background:linear-gradient(135deg,var(--tint),var(--tint2));display:flex;justify-content:space-between;align-items:center;gap:10px">
+          <div>
+            <div style="font-size:9.5px;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:3px">${esc(L.sheetTotal)}</div>
+            <div style="font-size:28px;font-weight:900;color:var(--dark);letter-spacing:-1.5px;line-height:1">${money(EST.mid)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:9.5px;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;font-weight:700">${esc(L.timing)}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--ink)">${esc(EST.timingShort)}</div>
+          </div>
+        </div>
+        ${EST.note ? `<div style="padding:10px 16px;font-size:11px;color:#6b7280;font-style:italic;line-height:1.4;border-top:1px solid var(--line)">${esc(EST.note)}</div>` : ''}
+      </div>
+    </div>
+
+    <div style="padding:10px 18px 8px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:7px;background:var(--tint2);border:1px solid var(--line);border-radius:12px;padding:10px 16px;text-align:center">
+        <span style="font-size:14px">✓</span>
+        <span style="font-size:12px;color:var(--ink);font-weight:600;line-height:1.4">${esc(L.sheetNoContact)}</span>
       </div>
     </div>
     ${ctaBlock}`

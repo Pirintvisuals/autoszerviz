@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- BLT Szerviz Kft., Szentendre. Szerelői verzió (see autoszerviz.html).
+
+       Their page names no specialty, so nothing here invents one. The only
+       hook they give is the logo: a van next to a sports car. So the main job
+       is a kisteherautó (VW Transporter T6), and the phone case is a BMW.
+
+       Priced job: leaking water pump on the 2.0 TDI. The expert moment is
+       true for this engine: the pump is driven by the timing belt, so it only
+       makes sense as a belt kit + pump job, otherwise the same labour is paid
+       twice.
+
+       Theme: monochrome, like the logo. Amber stays only on the CTA. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Black and white logo, so graphite + silver. Amber CTA only.
+const THEME = {
+  bg:'#0b0c0e', dark:'#16181c', mid:'#2d3139', brand:'#4b5260', bright:'#d1d5db',
+  dot:'#e5e7eb', chatBg:'#f7f7f8', tint:'#ececef', tint2:'#f5f5f7', line:'#e2e3e7',
+  ink:'#2d3139', inkSoft:'#16181c', ring:'rgba(209,213,219,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'BLT Szerviz',
+    // No services listed on their page; the logo says car + van, so that's it.
+    sub: 'Személyautó és kisteherautó',
+    tagline: 'Dózsa György út 22, Szentendre',
+    initial: 'B',
+    logoSrc: '/blt-szerviz-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a BLT saját alkatrészeivel, óradíjával és munkáival számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Kb. egy perc volt. Alkatrészt, munkaidőt és óradíjat nem kellett kikeresni, összeadni és begépelni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Szerelői megállapítás',
+    sheetItems: 'Alkatrész és munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'WV1ZZZ7HZHH123456, 186e km' },
+
+  { r:'agent', t:'Megvan: VW Transporter T6, 2017, 2.0 TDI, 110 kW. Mit találtál?' },
+  { r:'user',  t:'Fogy a hűtővíz, a vízpumpa szivárog, nedves alatta' },
+
+  // Szakértelem-pillanat: ennél a motornál a vízpumpát a vezérműszíj hajtja.
+  { r:'agent', t:'Ennél a motornál a vízpumpát a vezérműszíj hajtja, ugyanazzal a szétszereléssel jön ki. Csak a pumpát cserélni nem éri meg, a szíjért később még egyszer kifizeti a munkát. Volt már szíjcsere?' },
+  { r:'user',  t:'Nincs nyoma a szervizkönyvben' },
+
+  { r:'agent', t:'Akkor vezérműszíj készlet + vízpumpa együtt. Mivel számoljak: utángyártott, prémium (INA, SKF) vagy gyári? A prémium kb. 18 ezerrel több, a gyári kb. 46 ezerrel.' },
+  { r:'user',  t:'INA' },
+
+  { r:'agent', t:'Rendben. A hosszbordás szíj úgyis lejön közben. Ha repedezett, beteszem külön sorba, az ügyfél dönt róla.' },
+  { r:'user',  t:'Repedezett, mehet' },
+
+  { r:'agent', t:'Összeraktam, a te óradíjaddal és a beszállítói árakkal. G13 hűtőfolyadékkal számoltam.' },
+  { r:'estimate' },
+
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: BMW 320d 2014, első fék, mennyi?' },
+  { r:'agent', t:'Első tárcsa + betét + kopásjelző, prémium alkatrésszel, 1,2 óra munka: kb. 98 000 Ft. Ehhez a típushoz kétféle tárcsaméret is jár, ha bediktálja az alvázszámot, pontosítom.' },
+  { r:'user',  t:'Köszi, megmondom neki' },
+]
+
+// 4. EST.
+const EST = {
+  mid: 169_000,
+  items: [
+    { label:'Vezérműszíj készlet + vízpumpa (INA)',   amt: 85_000 },
+    { label:'Munkadíj: 4 óra × 15 000 Ft',             amt: 60_000 },
+    { label:'Hűtőfolyadék (G13)',                      amt: 12_000 },
+    { label:'Hosszbordás szíj',                        amt:  9_000 },
+    { label:'Apróanyag',                               amt:  3_000 },
+  ],
+  note: 'Az alvázszám alapján beazonosított alkatrészekkel. A hosszbordás szíj külön tétel, elhagyható.',
+  firstName: '',
+  timingShort: 'fél nap',
+  quoteNo: 'Á-2026/0413',
+  vehicle: [
+    ['Típus',     'VW Transporter T6 2.0 TDI, 2017'],
+    ['Teljesítmény', '110 kW (150 LE)'],
+    ['Alvázszám', 'WV1ZZZ7HZHH123456'],
+    ['Km-óra',    '186 000 km'],
+  ],
+  finding: 'Hűtőfolyadék-vesztés, a vízpumpa szivárog. Vezérműszíj-cserének nincs nyoma a szervizkönyvben, ezért készlettel együtt javasolt. Hosszbordás szíj repedezett.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>

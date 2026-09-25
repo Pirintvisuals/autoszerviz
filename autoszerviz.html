@@ -4,37 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Instant Quote Demo</title>
-  <!-- AUTÓSZERVIZ SABLON (prototípus).
+  <!-- AUTÓSZERVIZ SABLON, SZERELŐI VERZIÓ.
 
-       This is the reusable starting point for every szerviz demo. Copy it to
-       <szerviz-nev>.html, swap THEME + the marked PLACEHOLDER fields, and keep
-       the conversation skeleton, which is the part that does the selling.
+       Copy to <szerviz-nev>.html, swap THEME + the marked PLACEHOLDER fields.
 
-       Why it differs from the burkoló demo (borczi-szabolcs.html):
+       What changed from the first template (eki-auto / mobil-star / rapid are
+       still on the old, customer-facing version and are left alone):
 
-       1. LENGTH IS THE POINT. The DM promises the agent "addig kérdez tovább,
-          amíg meg nem van minden". A mechanic will literally count the
-          questions, so this flow asks nine, and every one of them is a
-          question a real szerviz asks on the phone.
+       1. THE MECHANIC IS THE ONE TYPING. The user bubbles are the szerelő at
+          the emelő, in workshop shorthand. He gives the car, says what he
+          found, the agent asks only what's still missing for an exact price.
 
-       2. ALVÁZSZÁM. The single exchange that proves the accuracy claim, and it
-          kills the "egy sablon nem tudhatja, mi megy az én autómba" objection
-          in the shop's own voice instead of ours.
+       2. NO CONTACT DETAILS. No name, phone, email, rendszám-for-CRM. The
+          estimate belongs to the car. That's the pitch: the unpaid quoting
+          time goes away, not "more leads".
 
-       3. TWO FLOWS. The second, shorter one shows the agent REFUSING to price a
-          vague symptom and booking diagnostics instead. Without it the demo
-          reads as a salesman; with it, it reads as a mechanic.
+       3. THE ALVÁZSZÁM MOMENT STAYS. It's still the one exchange that proves
+          accuracy: the agent tells the mechanic which variant to order.
 
-       4. NO BUDGET QUESTION. Works for a bathroom, but nobody has a budget for
-          a broken clutch, and asking makes it feel like haggling.
+       4. THE FINALE IS A FINISHED ESTIMATE SHEET (CONFIG.mode = 'mechanic'
+          in the engine), not an owner lead card: jármű, megállapítás, tételek,
+          végösszeg. The thing he'd otherwise type up himself.
 
-       5. DESTINATION TRADE. The customer drives to the szerviz, so the owner
-          card drops the distance block and the budget match, and answers what
-          the shop actually wants to know before it calls back: when, and which
-          parts grade. (EST.urgency / EST.decision / EST.jobValue in the engine.)
-
-       6. REGISTER. Customer side is tegezés. Everything owner-facing is
-          magázás, because the DM they arrived from is magázó.
+       5. REGISTER. The tool tegezi the mechanic (it's a workshop tool). The
+          landing page and CTA magázzák the owner, because the DM is magázó.
 
        Data-only file. Engine and styles live in /quote-agent.js and /quote-agent.css. -->
   <link rel="stylesheet" href="/quote-agent.css">
@@ -52,154 +45,113 @@ const THEME = {
   ink:'#33495c', inkSoft:'#b45309', ring:'rgba(217,119,6,0.40)', cta:'#f59e0b', cta2:'#d97706',
 }
 
-// 2. CONFIG. PLACEHOLDER: name, sub, tagline, logoSrc, leadTime.
+// 2. CONFIG. PLACEHOLDER: name, sub, tagline, logoSrc.
 const CONFIG = {
+  mode: 'mechanic',
   brand: {
     name: 'Kovács Autószerviz',
     // Hero subtitle = the shop's OWN services, lifted off their page. These are
     // the same hooks the DM opener uses, so the page confirms the DM.
-    sub: 'DPF tisztítás, futómű, vezérműszíj, klíma',
+    sub: 'DPF tisztítás, futómű, fék, klíma',
     tagline: 'Márkafüggetlen szerviz, Szolnok',
     initial: 'K',
     logoSrc: '',
     fbHandle: '',
-    online: 'Online · Másodperceken belül válaszolok',
+    online: 'Árajánlat-segéd · a műhelynek',
   },
   niche: 'autószerviz',
-  tooltip: 'Nézd meg, hogyan működik ▶',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
   currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
-  sendToOwnerLabel: 'Küldés a tulajdonosnak →',
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
   calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
   ctaTitle: 'Ez csak egy minta.',
-  // Owner-facing: magázás, and softer, to match "Nem kell elhinnie, hogy működik".
-  ctaText: 'Szeretné, hogy a saját oldalán éjjel-nappal így készüljenek el az árajánlatai Ön helyett?',
+  ctaText: 'Szeretné, hogy ez a saját alkatrészeivel, óradíjával és munkáival számoljon?',
   ctaButton: 'Beszéljünk 15 percet →',
-  leadTime: '11:19',
-  // The whole pitch in one line: nem lead érkezett, hanem kész árajánlat.
-  ownerBenefit: 'Ez az árajánlat 11:19-kor írta meg magát Ön helyett, miközben épp egy autó alatt volt. Nem egy telefonszám vár Önre estére, hanem egy kész ajánlat, alvázszámmal és alkatrész-választással együtt.',
+  // The whole pitch in one line: nem Ön gépeli be, nem Ön keresi ki.
+  ownerBenefit: 'Kb. egy perc volt. Alkatrészt, munkaidőt és óradíjat nem kellett kikeresni, összeadni és begépelni.',
   labels: {
-    titleSuffix: 'Azonnali árajánlat (minta)',
+    titleSuffix: 'Árajánlat-segéd (minta)',
     sampleBadge: 'Minta · nem élő rendszer',
-    watchHintPre: 'Koppints a chat buborékra, magától lejátszódik, ',
-    watchHintBold: 'csak nézd',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
     watchHintPost: ' ↘',
     replayTitle: 'Újrajátszás',
     closeTitle: 'Bezárás',
-    sampleStrip: 'Minta beszélgetés, automatikusan lejátszva',
+    sampleStrip: 'Minta: így használja a szerelő',
     inputPlaceholder: 'Minta, nem kell gépelni',
-    estimateIntro: 'Itt a becslésed',
-    estimateIntroSuffix: 'Így néznek ki a számok:',
-    estimatedTotal: 'Becsült összesen',
-    rangeSuffix: 'tartomány',
-    timing: 'Átfutási idő',
-    estimatedQuote: 'Becsült árajánlat',
-    ownerNotifSample: 'Tulajdonosi értesítés · minta',
-    howReceives: 'Így értesül róla {name}',
-    newLeadPrefix: 'Új',
-    leadLocation: 'Érdeklődő helye',
-    calculatedQuote: 'Kiszámított árajánlat',
-    jobDetails: 'Munka részletei',
-    confirmationEmail: 'Az ügyfél automatikus visszaigazoló emailt kapott',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
     bookCallFallback: 'Beszéljünk 15 percet →',
     logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Szerelői megállapítás',
+    sheetItems: 'Alkatrész és munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
   },
 }
 
-// 3. MSGS. Two flows. The first one prices an exact job, the second one
-// refuses to price a vague symptom and books diagnostics instead.
+// 3. MSGS. 'user' = the mechanic. Short, shorthand, the way you'd type with
+// greasy hands. The agent only asks what it can't work out on its own.
 const MSGS = [
-  // ── 1. nyitás ──
-  { r:'agent', t:'Szia! Árajánlatot szeretnél kérni valamilyen munkára?' },
-  { r:'user',  t:'Igen, vezérműszíj cserére kérnék árat' },
+  // ── 1. autó: elég az alvázszám ──
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'TMBJG7NE5F0123456, 218e km' },
 
-  // ── 2. autó: márka, típus, évjárat, motor ──
-  { r:'agent', t:'Rendben. Milyen autóról van szó? Márka, típus, évjárat és motor.' },
-  { r:'user',  t:'Skoda Octavia, 2015-ös, 1.6 TDI' },
+  // ── 2. alvázszámból kikeresve, és rögtön: mi a gond ──
+  { r:'agent', t:'Megvan: Skoda Octavia III, 2015, 1.6 TDI, CLHA motor, 77 kW. Mit találtál?' },
+  { r:'user',  t:'Fékezésnél rázza a kormányt. Első tárcsák vetemedtek, betét 3 mm' },
 
-  // ── 3. alvázszám. Ez az egy váltás bizonyítja a pontosságot, és ez öli meg
-  //       azt az ellenvetést, hogy egy sablon nem tudhatja, mi megy az autóba.
-  { r:'agent', t:'Köszönöm. Meg tudod adni az alvázszámot? Az alvázszámból pontosan látom, melyik alkatrész megy bele, mert egy típushoz több változat is van.' },
-  { r:'user',  t:'TMBJG7NE5F0123456' },
+  // ── 3. alvázszám-pillanat: a pontosság bizonyítéka ──
+  { r:'agent', t:'Akkor első tárcsa + betét. Figyelj, erre az alvázszámra a 288 mm-es első tárcsa kell, nem a 312-es, a típuson belül mindkettő előfordul. Hátul mi a helyzet?' },
+  { r:'user',  t:'Hátul jó, 7 mm a betét' },
 
-  // ── 4. futásteljesítmény ──
-  { r:'agent', t:'Megvan, ez a 77 kW-os CLHA motorkód. Mennyi van benne kilométerben?' },
-  { r:'user',  t:'Kb 218 000 km' },
+  // ── 4. alkatrész-kategória, egysoros ár-következménnyel ──
+  { r:'agent', t:'Mivel számoljak: utángyártott, prémium (ATE, Brembo) vagy gyári? A prémium kb. 11 ezerrel több az utángyártottnál, a gyári kb. 29 ezerrel.' },
+  { r:'user',  t:'Prémium, ATE' },
 
-  // ── 5. mi a hiba / mit kérsz (itt: konkrét munka, megy tovább pontos árig) ──
-  { r:'agent', t:'Köszönöm. Van valami konkrét hiba, vagy szervizkönyv szerint esedékes a csere?' },
-  { r:'user',  t:'Nincs hiba, csak esedékes, a szervizkönyv szerint már rég' },
+  // ── 5. szakértelem-pillanat: amit a szerelő is felajánlana ──
+  { r:'agent', t:'Rendben. Fékfolyadékot mérted? Ha régi, külön sorba teszem, és az ügyfél dönt róla.' },
+  { r:'user',  t:'3%-ot mutat, mehet bele' },
 
-  // ── 6. alkatrész-kategória, egysoros ár-következménnyel ──
-  { r:'agent', t:'Értem. Alkatrészben mivel számoljak: utángyártott, gyári vagy prémium? Az utángyártott a legkedvezőbb, a prémium készlet kb 20 ezerrel, a gyári kb 38 ezerrel több, cserébe hosszabb garanciával.' },
-  { r:'user',  t:'Utángyártott jó lesz' },
-
-  // ── 7. szakértelem-pillanat. Igaz, és a szerviz azonnal felismeri benne a pénzt.
-  { r:'agent', t:'Egy dolgot érdemes tudni. Vezérműszíj cserénél a vízpumpát is érdemes vele együtt cserélni, mert ugyanaz a munkadíj. Külön, később még egyszer ennyibe kerülne a szerelés.' },
-  { r:'user',  t:'Akkor menjen vele a vízpumpa is' },
-
-  // ── 8. mikorra kell, mennyire sürgős ──
-  { r:'agent', t:'Rendben. Mikorra kellene, mennyire sürgős?' },
-  { r:'user',  t:'Jövő héten bármelyik nap jó, nem sürgős' },
-
-  // ── 9. elérhetőség: név, telefon, email, rendszám ──
-  { r:'agent', t:'Elkérhetem a neved?' },
-  { r:'user',  t:'Tóth Gábor' },
-  { r:'agent', t:'Köszönöm, Gábor. Milyen számon érlek el a legkönnyebben?' },
-  { r:'user',  t:'+36 30 412 7788' },
-  { r:'agent', t:'És az email címed?' },
-  { r:'user',  t:'toth.gabor88@gmail.com' },
-  { r:'agent', t:'A rendszámot is elkérem, azon tartjuk nyilván az autót és az előzményeit.' },
-  { r:'user',  t:'MAB-123' },
-  { r:'agent', t:'Köszönöm, Gábor, már állítom is össze a tájékoztató árat.' },
+  { r:'agent', t:'Összeraktam, a te óradíjaddal és a beszállítói árakkal.' },
   { r:'estimate' },
 
-  // ── Második, rövid folyam: nincs pontos hiba, ezért nincs ár sem ──
-  { r:'divider', t:'Másik eset: amikor nincs pontos hiba' },
-  { r:'agent', t:'Szia! Árajánlatot szeretnél kérni valamilyen munkára?' },
-  { r:'user',  t:'Fékezéskor valami furcsa zajt hallok, és néha felvillan egy lámpa' },
-  { r:'agent', t:'Erre látatlanban nem mondok árat, mert a zaj lehet fékbetét, kerékcsapágy vagy féltengely is, és a három között sok tízezer forint a különbség. Milyen autóról van szó és mennyi van benne?' },
-  { r:'user',  t:'Ford Focus 1.6, 2013-as, kb 190 000 km' },
-  { r:'agent', t:'Köszönöm. Erre diagnosztikát ajánlok: emelőre tesszük, kiolvassuk a hibakódot, és utána kapsz pontos árat a javításra. A diagnosztika 9 000 Ft, és ha nálunk készül el a javítás, beleszámítjuk a munkadíjba.' },
-  { r:'user',  t:'Ez korrekt. Mikor tudnátok megnézni?' },
-  { r:'agent', t:'Csütörtök reggel 8-ra vagy péntek 13 órára tudlak beírni. Melyik a jobb?' },
-  { r:'user',  t:'Csütörtök reggel jó' },
-  { r:'agent', t:'Beírtalak csütörtök 8-ra. Már csak a rendszámod és egy telefonszám kell, és szólok a főnöknek, hogy számítson rád.' },
+  // ── Második, rövid eset: telefonon kérdez az ügyfél, a szerelő csak továbbítja ──
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: Focus 2013 1.6 benzin, kuplung. Mennyi?' },
+  { r:'agent', t:'Kuplungszett + kinyomócsapágy, 5 óra munka: kb. 158 000 Ft. Ha a lendkerék is cserés, +45 000 Ft, azt csak szétszedve látod. Ha bediktálja az alvázszámot, pontosítom.' },
+  { r:'user',  t:'Köszi, megmondom neki' },
 ]
 
-// 4. EST. Mechanic breakdown: alkatrész, munkadíj órában és óradíjban külön,
-// apróanyag. PLACEHOLDER: óradíj és árak a szerviz saját listája szerint.
+// 4. EST. The estimate sheet. PLACEHOLDER: óradíj és árak a szerviz saját
+// listája szerint. No customer block on purpose.
 const EST = {
-  lower: 118_000, mid: 125_000, upper: 138_000,
-  status: 'PRIORITY',
+  mid: 93_000,
   items: [
-    { label:'Alkatrész: vezérműszíj készlet + vízpumpa (utángyártott)', amt: 62_000 },
-    { label:'Munkadíj: 4,5 óra × 12 000 Ft óradíj',                     amt: 54_000 },
-    { label:'Hűtőfolyadék, apróanyag',                                  amt:  9_000 },
+    { label:'Első féktárcsa pár, 288 mm (ATE)',              amt: 38_000 },
+    { label:'Első fékbetét készlet (ATE)',                   amt: 17_000 },
+    { label:'Munkadíj: 1,5 óra × 14 000 Ft',                 amt: 21_000 },
+    { label:'Fékfolyadék csere (DOT4, 0,5 óra + anyag)',      amt: 14_000 },
+    { label:'Féktisztító, apróanyag',                         amt:  3_000 },
   ],
-  note: 'Az alvázszám alapján beazonosított alkatrészekkel számolva.',
-  customer: {
-    'Name':'Tóth Gábor',
-    'Phone':'+36 30 412 7788',
-    'Email':'toth.gabor88@gmail.com',
-  },
-  firstName: 'Gábor',   // magyar névsorrend, különben vezetéknéven köszönne
-  timingShort: '1 munkanap',
-  jobTags: [
-    'Skoda Octavia 1.6 TDI, 2015',
-    'Alvázszám: TMBJG7NE5F0123456',
-    '218 000 km',
-    'Vezérműszíj készlet + vízpumpa együtt',
-    'Rendszám: MAB-123',
+  note: 'Az alvázszám alapján beazonosított alkatrészekkel. A fékfolyadék külön tétel, elhagyható.',
+  firstName: '',
+  timingShort: 'kb. 2 óra',
+  quoteNo: 'Á-2026/0412',
+  vehicle: [
+    ['Típus',          'Skoda Octavia III 1.6 TDI, 2015'],
+    ['Motorkód',       'CLHA, 77 kW'],
+    ['Alvázszám',      'TMBJG7NE5F0123456'],
+    ['Km-óra',         '218 000 km'],
   ],
-  // Destination trade: nincs távolság, helyette az időpont és a sürgősség.
-  urgency: { label:'Kért időpont', value:'Jövő hét, bármelyik nap', note:'Nem sürgős, megelőző csere' },
-  // Ez az a döntés, amit a szerviz tudni akar, mielőtt visszahívja.
-  decision: { label:'Alkatrész-kategória', value:'Utángyártott', note:'Prémiummal kb +20 000 Ft, gyárival kb +38 000 Ft.' },
-  // Lead scoring helyett: mennyit ér a munka. (Töröljük az egészet, ha zavaró:
-  // hagyd ki a jobValue mezőt, és a panel eltűnik.)
-  jobValue: { label:'Munka értéke', value:'125 000 Ft · 4,5 óra', note:'Egy emelőt köt le fél napra, alkatrész előre rendelhető.' },
-  scoreLabel: 'munka',
-  clientCity: 'Szolnok', clientZip: '5000',
+  finding: 'Fékezéskor kormányrázás. Első féktárcsák vetemedtek, első betétek 3 mm-re kopva. Hátsó fék rendben (betét 7 mm). Fékfolyadék víztartalma 3%, csere javasolt.',
 }
 </script>
 <script src="/quote-agent.js"></script>
