@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Fáber Team Autószerviz, Budapest XV. Szerelői verzió (see autoszerviz.html).
+
+       Their site says their main profile is karambolos javítás as insurers'
+       partner, and that after diagnosis they send "hibalistával és
+       árajánlatban". So the demo is exactly that step, for a body job.
+
+       Priced job: a private-pay (non-insurance) front bumper hit on a Golf
+       VII. Expert moments: a new bumper needs the parking sensor holes cut
+       and holders moved (separate labour); a broken headlight tab takes a
+       repair kit, not a new headlight; plain LC9A white means no blending
+       into the wing, pearl white would.
+
+       Second flow refuses to price a dent unseen. That's on purpose: the
+       most common objection so far is "látatlanban nem lehet árat adni",
+       and the demo agrees with it.
+
+       Theme: red + silver from the logo. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Red lettering on a silver badge.
+const THEME = {
+  bg:'#0f1012', dark:'#1c1d21', mid:'#3a3d44', brand:'#c8102e', bright:'#ef4444',
+  dot:'#fca5a5', chatBg:'#f8f8f9', tint:'#fde4e7', tint2:'#fdf2f4', line:'#ecdfe2',
+  ink:'#3a3d44', inkSoft:'#a50d26', ring:'rgba(200,16,46,0.40)', cta:'#ef4444', cta2:'#c8102e',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'Fáber Team Autószerviz',
+    sub: 'Karambolos javítás, kárrendezés, szerviz',
+    tagline: 'Márkafüggetlen autószerviz, Budapest XV.',
+    initial: 'F',
+    logoSrc: '/faber-team-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a Fáber Team saját alkatrészeivel, óradíjával és munkáival számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  // Echoes their own site: "hibalistával és árajánlatban tájékoztatják".
+  ownerBenefit: 'Ez az a hibalista és árajánlat, amit most kézzel írnak meg. Kb. egy perc volt, alkatrészt, munkaidőt és fényezést nem kellett kikeresni és összeadni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Átfutás',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Hibalista és árajánlat az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Hibalista',
+    sheetItems: 'Alkatrész, fényezés, munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic / karosszéria lakatos.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'WVWZZZAUZHW123456, 94e km' },
+
+  { r:'agent', t:'Megvan: VW Golf VII, 2017, 1.4 TSI, 92 kW. Biztosítós vagy saját zsebből fizeti?' },
+  { r:'user',  t:'Saját zsebből, nem akarja a bónuszt elveszíteni' },
+
+  { r:'agent', t:'Rendben. Mit találtál rajta?' },
+  { r:'user',  t:'Első lökhárító szakadt a rögzítésnél, bal ködlámparács törött, bal fényszóró tartófül letört' },
+
+  // Szakértelem-pillanat 1: szenzorfuratok + fényszóró javítókészlet
+  { r:'agent', t:'Van parkolószenzor az első lökhárítóban? Mert új lökhárítónál ki kell fúrni a furatokat és át kell rakni a tartókat, azt külön munkaként számolom. A fényszóróhoz van tartófül-javító készlet, nem kell új fényszóró.' },
+  { r:'user',  t:'Van, 4 szenzor. Javítókészlet jó' },
+
+  { r:'agent', t:'Lökhárító: utángyártott vagy gyári? A gyári kb. 62 ezerrel több, cserébe pontosabban illeszkedik.' },
+  { r:'user',  t:'Utángyártott' },
+
+  // Szakértelem-pillanat 2: gyöngyház vs sima fehér
+  { r:'agent', t:'Mi a színkód? Ha gyöngyházfehér, az háromrétegű, drágább, és a sárvédőre is be kell színezni.' },
+  { r:'user',  t:'LC9A, sima fehér' },
+
+  { r:'agent', t:'Sima fehérnél elég a lökhárítót fényezni, a sárvédő beszínezésével nem számolok. Összeraktam a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'estimate' },
+
+  // Második eset: amit látatlanban NEM áraz
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: parkolásnál behorpadt a hátsó ajtaja, Suzuki Vitara. Mennyi?' },
+  { r:'agent', t:'Ezt látatlanban nem árazom: az számít, hogy megvan-e a festék, és javítható-e az ajtó, vagy csere. Hozza be 10 percre, és a hibafeltárás után egy perc alatt kész az ajánlat.' },
+  { r:'user',  t:'Oké, megmondom neki' },
+]
+
+// 4. EST.
+const EST = {
+  mid: 180_000,
+  items: [
+    { label:'Első lökhárító, alapozott (utángyártott)',            amt: 48_000 },
+    { label:'Bal ködlámparács',                                    amt:  6_000 },
+    { label:'Fényszóró tartófül-javító készlet',                   amt:  9_000 },
+    { label:'Lökhárító fényezés, LC9A (anyaggal)',                 amt: 65_000 },
+    { label:'Munkadíj: 3 óra × 16 000 Ft (szerelés, szenzorfuratok)', amt: 48_000 },
+    { label:'Patentek, apróanyag',                                 amt:  4_000 },
+  ],
+  note: 'Saját fizetésű javítás, nem biztosítói kalkuláció. A sárvédő beszínezése nincs benne.',
+  firstName: '',
+  timingShort: '2 munkanap',
+  quoteNo: 'Á-2026/0414',
+  vehicle: [
+    ['Típus',     'VW Golf VII 1.4 TSI, 2017'],
+    ['Színkód',   'LC9A Pure White'],
+    ['Alvázszám', 'WVWZZZAUZHW123456'],
+    ['Km-óra',    '94 000 km'],
+  ],
+  finding: 'Első lökhárító a rögzítésnél szakadt, csere szükséges (4 parkolószenzor, furatok és tartók átrakásával). Bal ködlámparács törött. Bal fényszóró tartófüle letört, javítókészlettel javítható.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>

@@ -19,6 +19,7 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | Mobil Star (Bosch Car Service), Budapest | `/mobil-star` |
 | Rapid Autószerviz, Szolnok | `/rapid-autoszerviz` |
 | BLT Szerviz Kft., Szentendre (szerelői verzió) | `/blt-szerviz` |
+| Fáber Team Autószerviz, Budapest XV. (szerelői verzió) | `/faber-team` |
 
 ## Szerelői verzió (a sablon ezt adja, 2026-09-25-től)
 
