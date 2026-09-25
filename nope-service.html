@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- NOPE Service Kft., Szentendre. Szerelői verzió (see autoszerviz.html).
+
+       Hooks from nopeservice.hu: futómű is a headline service, and the owner
+       (Vörös Norbert) is said to focus on Japanese cars. So the job is front
+       suspension on a Suzuki Vitara, the most common Japanese-badge car in
+       Hungary.
+
+       Expert moments: stabilizer links go in pairs, and a lower control arm
+       swap means a futóműbeállítás afterwards, which they do in-house, so it
+       lands on the sheet as its own line.
+
+       Second flow refuses to price a knock unseen (same reason as Fáber). -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Logo is grey/white over a workshop photo, so graphite + steel blue.
+const THEME = {
+  bg:'#0c0f13', dark:'#161b22', mid:'#2f3945', brand:'#2563eb', bright:'#60a5fa',
+  dot:'#93c5fd', chatBg:'#f6f8fb', tint:'#e3ecfb', tint2:'#f1f5fd', line:'#dde5f0',
+  ink:'#2f3945', inkSoft:'#1d4ed8', ring:'rgba(37,99,235,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'NOPE Service',
+    sub: 'Autószerviz, futómű, diagnosztika, gumi',
+    tagline: 'Városkapu utca 2, Szentendre',
+    initial: 'N',
+    logoSrc: '/nope-service-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a NOPE Service saját alkatrészeivel, óradíjával és munkáival számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Kb. egy perc volt. Alkatrészt, munkaidőt és óradíjat nem kellett kikeresni, összeadni és begépelni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Szerelői megállapítás',
+    sheetItems: 'Alkatrész és munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'TSMLYD21S00123456, 142e km' },
+
+  { r:'agent', t:'Megvan: Suzuki Vitara (LY), 2017, 1.6, 88 kW. Mit találtál?' },
+  { r:'user',  t:'Kátyún kopog elöl. Bal stabilizátor pálca kotyog, bal alsó lengőkar hátsó szilentje szakadt' },
+
+  { r:'agent', t:'Csak a szilentet cseréled, vagy komplett lengőkart? A komplett kb. 14 ezerrel drágább, cserébe fél órával kevesebb munka.' },
+  { r:'user',  t:'Komplett lengőkar' },
+
+  // Szakértelem-pillanat 1: stabilizátor pálcát párban
+  { r:'agent', t:'A jobb oldali stabilizátor pálcát is nézted? Párban szokás cserélni, különben pár hónap múlva az is visszajön.' },
+  { r:'user',  t:'Jobb is kotyog kicsit, mehet mindkettő' },
+
+  { r:'agent', t:'Alkatrészben mivel számoljak: utángyártott, prémium (TRW, Febi) vagy gyári? A prémium kb. 9 ezerrel több, a gyári kb. 31 ezerrel.' },
+  { r:'user',  t:'TRW' },
+
+  // Szakértelem-pillanat 2: lengőkar után futóműbeállítás
+  { r:'agent', t:'Lengőkarcsere után futóműbeállítás kell, azt külön sorba teszem, nálatok úgyis megvan rá a gép. Összeraktam a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'estimate' },
+
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: Honda Civic 2012, kopog elöl. Mennyi lesz?' },
+  { r:'agent', t:'Ezt látatlanban nem árazom: lehet stabilizátor pálca, szilent, gömbfej vagy toronycsapágy is, és ezek között sok tízezer a különbség. Hozza be, emelőn 10 perc, utána egy perc alatt kész az ajánlat.' },
+  { r:'user',  t:'Oké, megmondom neki' },
+]
+
+// 4. EST.
+const EST = {
+  mid: 86_000,
+  items: [
+    { label:'Bal első alsó lengőkar, komplett (TRW)',  amt: 32_000 },
+    { label:'Első stabilizátor pálca pár (TRW)',       amt: 16_000 },
+    { label:'Munkadíj: 1,5 óra × 14 000 Ft',           amt: 21_000 },
+    { label:'Futóműbeállítás',                         amt: 15_000 },
+    { label:'Apróanyag',                               amt:  2_000 },
+  ],
+  note: 'Az alvázszám alapján beazonosított alkatrészekkel. A futóműbeállítás a lengőkarcsere miatt szükséges.',
+  firstName: '',
+  timingShort: 'kb. 2 óra',
+  quoteNo: 'Á-2026/0415',
+  vehicle: [
+    ['Típus',        'Suzuki Vitara (LY) 1.6, 2017'],
+    ['Teljesítmény', '88 kW (120 LE)'],
+    ['Alvázszám',    'TSMLYD21S00123456'],
+    ['Km-óra',       '142 000 km'],
+  ],
+  finding: 'Első futóműből kopogó hang úthibán. Bal első stabilizátor pálca kotyog, a jobb oldali is kotyog, párban csere javasolt. Bal alsó lengőkar hátsó szilentje szakadt. Csere után futóműbeállítás szükséges.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>

@@ -20,6 +20,7 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | Rapid Autószerviz, Szolnok | `/rapid-autoszerviz` |
 | BLT Szerviz Kft., Szentendre (szerelői verzió) | `/blt-szerviz` |
 | Fáber Team Autószerviz, Budapest XV. (szerelői verzió) | `/faber-team` |
+| NOPE Service Kft., Szentendre (szerelői verzió) | `/nope-service` |
 
 ## Szerelői verzió (a sablon ezt adja, 2026-09-25-től)
 
