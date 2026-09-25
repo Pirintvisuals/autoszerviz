@@ -21,6 +21,7 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | BLT Szerviz Kft., Szentendre (szerelői verzió) | `/blt-szerviz` |
 | Fáber Team Autószerviz, Budapest XV. (szerelői verzió) | `/faber-team` |
 | NOPE Service Kft., Szentendre (szerelői verzió) | `/nope-service` |
+| Budai Autószervíz (Bosch Car Service), Budapest XXI. (szerelői verzió) | `/budai-autoszerviz` |
 
 ## Szerelői verzió (a sablon ezt adja, 2026-09-25-től)
 

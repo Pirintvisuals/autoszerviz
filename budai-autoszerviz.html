@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Budai Autószervíz, Bosch Car Service. Ady Endre út 42, 1215 Budapest
+       (Csepel), plus Szeged. Szerelői verzió (see autoszerviz.html).
+
+       Their listed specialties: fékjavítás, futómű állítás, automata váltó
+       olajcsere, vezérlés csere, klímatöltés minden gáztípussal. Mobil Star
+       (also Bosch) already prices a kuplung, so this one prices their most
+       distinctive line: automata váltó olajcsere.
+
+       Expert moments: the alvázszám settles WHICH automatic (6-speed wet
+       DQ250, 60 000 km interval, external filter); the adaptation run after
+       the oil change goes on its own line; and the agent refuses to promise
+       the jerking will stop, putting the next step in the note instead.
+
+       Second flow uses their "minden gáztípussal" line: a 2019 car is
+       R1234yf, and an empty system means a leak to find first.
+
+       Theme: Bosch blue + red, same as mobil-star.html. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Bosch kék alap, Bosch piros kiemelés.
+const THEME = {
+  bg:'#051d31', dark:'#005691', mid:'#2b7cb3', brand:'#e2001a', bright:'#f4372a',
+  dot:'#ffb3ad', chatBg:'#fff8f7', tint:'#fbd9d5', tint2:'#fdeceb', line:'#f4cbc6',
+  ink:'#005691', inkSoft:'#c1121f', ring:'rgba(226,0,26,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'Budai Autószervíz',
+    sub: 'Fék, futómű, automata váltó, vezérlés, klíma',
+    tagline: 'Bosch Car Service, Budapest XXI. és Szeged',
+    initial: 'B',
+    logoSrc: '/budai-autoszerviz-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a Budai Autószervíz saját alkatrészeivel, óradíjával és munkáival számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Kb. egy perc volt. Váltótípust, olajat, munkaidőt és óradíjat nem kellett kikeresni, összeadni és begépelni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Szerelői megállapítás',
+    sheetItems: 'Alkatrész és munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'WVWZZZ3GZGE123456, 168e km. Váltóolaj csere' },
+
+  // Alvázszám-pillanat: melyik automata, milyen intervallum
+  { r:'agent', t:'Megvan: VW Passat B8, 2016, 2.0 TDI, 110 kW, 6 fokozatú nedves kuplungos DSG (DQ250). Ennél 60 000 km-enként esedékes az olajcsere. Mikor volt utoljára? Van valami panasz?' },
+  { r:'user',  t:'Nincs nyoma a szervizkönyvben. Hidegen rángat 1-2 között' },
+
+  // Szakértelem-pillanat: szűrő + adaptáció, és nem ígér csodát
+  { r:'agent', t:'Rendben. A DQ250-nél külső olajszűrő is van, azt is beteszem. Csere után alapbeállítást futtatnék diagnosztikával, azt külön sorba írom. A rángatáson az olajcsere sokszor segít, de nem ígérném, hogy megszűnik, ezt a megjegyzésbe is beírom.' },
+  { r:'user',  t:'Jó, úgy legyen' },
+
+  { r:'agent', t:'Olajban mivel számoljak: gyári VW DSG olaj, vagy utángyártott, ami megfelel a specifikációnak? Az utángyártott kb. 9 ezerrel olcsóbb.' },
+  { r:'user',  t:'Gyári' },
+
+  { r:'agent', t:'Összeraktam a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'estimate' },
+
+  // Második eset: klímatöltés "minden gáztípussal"
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: 2019-es Octavia, nem hűt a klíma. Mennyi a töltés?' },
+  { r:'agent', t:'2019-es Octaviában már R1234yf gáz van, a töltés azzal kb. 42 000 Ft. De ha teljesen kiürült, valahol szivárog, és azt előbb meg kell keresni, különben pár hét múlva megint üres. Hozza be, 20 perc alatt kiderül.' },
+  { r:'user',  t:'Oké, megmondom neki' },
+]
+
+// 4. EST.
+const EST = {
+  mid: 74_000,
+  items: [
+    { label:'DSG váltóolaj, 6 l (gyári VW)',                    amt: 36_000 },
+    { label:'Váltóolaj-szűrő + tömítés',                         amt:  8_000 },
+    { label:'Munkadíj: 1 óra × 16 000 Ft',                       amt: 16_000 },
+    { label:'Alapbeállítás (adaptáció) diagnosztikával',         amt: 12_000 },
+    { label:'Apróanyag',                                         amt:  2_000 },
+  ],
+  note: 'Ha a rángatás olajcsere és alapbeállítás után is megmarad, kuplung- vagy mechatronika-vizsgálat szükséges, az nincs benne az árban.',
+  firstName: '',
+  timingShort: 'kb. 1,5 óra',
+  quoteNo: 'Á-2026/0416',
+  vehicle: [
+    ['Típus',     'VW Passat B8 2.0 TDI, 2016'],
+    ['Váltó',     '6 fokozatú DSG (DQ250)'],
+    ['Alvázszám', 'WVWZZZ3GZGE123456'],
+    ['Km-óra',    '168 000 km'],
+  ],
+  finding: 'Váltóolaj-csere esedékes, a szervizkönyvben nincs nyoma. Hidegen rángatás 1-2 fokozat között. Olaj- és szűrőcsere, utána alapbeállítás javasolt.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
