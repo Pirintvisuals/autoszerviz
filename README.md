@@ -23,6 +23,7 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | NOPE Service Kft., Szentendre (szerelői verzió) | `/nope-service` |
 | Budai Autószervíz (Bosch Car Service), Budapest XXI. (szerelői verzió) | `/budai-autoszerviz` |
 | ER-ZO Team (truck & trailer), Alsónémedi (szerelői verzió) | `/erzo-team` |
+| Emőd Autó és Gumiszerviz, Emőd (szerelői verzió) | `/emod-auto` |
 
 ## Szerelői verzió (a sablon ezt adja, 2026-09-25-től)
 

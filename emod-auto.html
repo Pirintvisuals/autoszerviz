@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Emőd Autó és Gumiszerviz, Arany János út 24 (3-as főút), 3432 Emőd.
+       Szerelői verzió (see autoszerviz.html).
+
+       Their page says nothing beyond the name and address, and the name says
+       autó + gumi. It's end of September, so the job is a téli garnitúra on
+       lemezfelni: the thing every gumis is quoting all October.
+
+       Expert moments: the alvázszám can't settle the tyre size (the car came
+       with 16/17/19"), so it asks; the car has direct TPMS, so bare steel
+       wheels mean a warning light all winter, so it offers sensors +
+       betanítás; and the summer set goes into storage as its own line.
+
+       Second flow won't price a coolant leak unseen.
+
+       Theme: black / red from the logo. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Black badge, red tyre swoosh.
+const THEME = {
+  bg:'#0a0a0b', dark:'#161618', mid:'#2e2e33', brand:'#dc1f26', bright:'#f24a50',
+  dot:'#fca5a8', chatBg:'#f8f8f8', tint:'#fde2e3', tint2:'#fdf1f1', line:'#ecdcdd',
+  ink:'#2e2e33', inkSoft:'#b3161c', ring:'rgba(220,31,38,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'Emőd Autó és Gumiszerviz',
+    sub: 'Autószerviz és gumiszerviz',
+    tagline: 'Arany János út 24 (3-as főút), Emőd',
+    initial: 'E',
+    logoSrc: '/emod-auto-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez az Emőd Autó saját gumi- és alkatrészáraival, óradíjával számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Kb. egy perc volt. Gumiméretet, szenzort, felnit és árakat nem kellett kikeresni, összeadni és begépelni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Szerelői megállapítás',
+    sheetItems: 'Gumi, felni, szenzor, munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'U5YPH814AJL123456, 98e km. Téli garnitúra kell neki lemezfelnivel' },
+
+  // Nem talál ki semmit: a méretet a szerelő látja, nem az alvázszám
+  { r:'agent', t:'Megvan: Kia Sportage (QL), 2018, 1.6 GDI. Ez gyárilag 16, 17 és 19 colos kerékkel is jött. Milyen méret van most rajta?' },
+  { r:'user',  t:'225/60 R17' },
+
+  // Szakértelem-pillanat 1: direkt TPMS
+  { r:'agent', t:'Ennél az autónál direkt keréknyomás-érzékelők vannak a felnikben. Ha az új lemezfelnikbe nem kerül szenzor, egész télen égni fog a lámpa a műszerfalon. Tegyek bele 4 szenzort betanítással?' },
+  { r:'user',  t:'Igen, mehet' },
+
+  { r:'agent', t:'Gumiban mivel számoljak: prémium (Michelin, Continental), közép (Hankook, Nokian) vagy olcsóbb? A prémium garnitúra kb. 60 ezerrel több a középnél.' },
+  { r:'user',  t:'Hankook' },
+
+  // Szakértelem-pillanat 2: tárolás külön sorban
+  { r:'agent', t:'A nyári kereket nálatok tárolja? Beteszem külön sorba, az ügyfél dönt róla.' },
+  { r:'user',  t:'Igen, tegyük bele' },
+
+  { r:'agent', t:'Összeraktam a te áraiddal.' },
+  { r:'estimate' },
+
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: Opel Astra, fogy a hűtővíz. Mennyi a javítás?' },
+  { r:'agent', t:'Ezt látatlanban nem árazom: lehet egy tömlő, a vízpumpa vagy a hűtő is, és ezek között sok tízezer a különbség. Hozza be, nyomáspróbával 20 perc alatt kiderül, utána egy perc alatt kész az ajánlat.' },
+  { r:'user',  t:'Oké, megmondom neki' },
+]
+
+// 4. EST.
+const EST = {
+  mid: 324_000,
+  items: [
+    { label:'Téli gumi 225/60 R17, 4 db (Hankook)',       amt: 152_000 },
+    { label:'Lemezfelni 17", 4 db',                         amt:  88_000 },
+    { label:'Keréknyomás-érzékelő (TPMS), 4 db + betanítás', amt:  56_000 },
+    { label:'Szerelés, centírozás, 4 kerék',               amt:  16_000 },
+    { label:'Nyári kerék tárolás, 1 szezon',               amt:  12_000 },
+  ],
+  note: 'A tárolás külön tétel, elhagyható. Szenzor nélkül a keréknyomás-figyelő lámpa egész télen égne.',
+  firstName: '',
+  timingShort: 'kb. 1 óra',
+  quoteNo: 'Á-2026/0418',
+  vehicle: [
+    ['Típus',     'Kia Sportage (QL) 1.6 GDI, 2018'],
+    ['Kerékméret', '225/60 R17'],
+    ['Alvázszám', 'U5YPH814AJL123456'],
+    ['Km-óra',    '98 000 km'],
+  ],
+  finding: 'Téli garnitúra lemezfelnivel. Az autó direkt keréknyomás-érzékelős, ezért az új felnikbe szenzor és betanítás szükséges. Nyári kerekek tárolásra.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
