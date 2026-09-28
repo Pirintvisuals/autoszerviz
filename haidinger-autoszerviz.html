@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Haidinger Autószerviz Kft. (FB: Aba Autószerviz), Petőfi utca 5,
+       8127 Aba. Q-Service partner. Szerelői verzió (see autoszerviz.html).
+
+       abaautoszerviz.hu leads with ADAS radar és kamera kalibrálás (Brain
+       Bee ADAS 2.0), and they run their own műszaki vizsgaközpont (Sallai
+       Antal, vizsgabiztos). The demo ties those together with futómű:
+
+       vizsga előtti átnézés -> kotyogó gömbfej (vizsgahiba) -> lengőkar ->
+       futóműbeállítás -> on this car the front camera must be calibrated
+       after an alignment -> their own Brain Bee -> then the vizsga itself.
+
+       Every line on the sheet is a service they already sell.
+
+       Second flow is the opposite of the other demos: a kalibrálás IS a
+       priceable fixed job, so it gives a figure, and only asks for make +
+       year because some cars also have a bumper radar.
+
+       Theme: navy + blue from the logo. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Navy background, blue car + gear.
+const THEME = {
+  bg:'#0a1424', dark:'#0f2342', mid:'#1e3a64', brand:'#2f7fd8', bright:'#5aa5ff',
+  dot:'#a9d0ff', chatBg:'#f5f8fc', tint:'#e0ecfa', tint2:'#eff5fd', line:'#d9e4f2',
+  ink:'#1e3a64', inkSoft:'#1f63b5', ring:'rgba(47,127,216,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'Haidinger Autószerviz',
+    sub: 'ADAS kalibrálás, műszaki vizsga, diagnosztika',
+    tagline: 'Petőfi utca 5, Aba · Q-Service partner',
+    initial: 'H',
+    logoSrc: '/haidinger-autoszerviz-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a Haidinger Autószerviz saját alkatrészeivel, óradíjával és munkáival számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Kb. egy perc volt. Alkatrészt, munkaidőt, kalibrálást és vizsgadíjat nem kellett kikeresni, összeadni és begépelni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Vizsga előtti átnézés',
+    sheetItems: 'Alkatrész, munkadíj, vizsga',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'TMBJR7NX0MY123456, 124e km. Vizsga előtti átnézés' },
+
+  { r:'agent', t:'Megvan: Skoda Octavia IV, 2021, 2.0 TDI, 85 kW, első kamerával a szélvédő mögött (sávtartó, vészfékező). Mit találtál?' },
+  { r:'user',  t:'Jobb első lengőkar gömbfej kotyog. Hátsó fékbetét 3 mm' },
+
+  { r:'agent', t:'A kotyogó gömbfej vizsgahiba, azzal nem megy át. Csak a gömbfejet cseréled, vagy komplett lengőkart?' },
+  { r:'user',  t:'Komplett lengőkar' },
+
+  // Szakértelem-pillanat: futóműbeállítás -> kamera kalibrálás
+  { r:'agent', t:'Lengőkarcsere után futóműbeállítás kell. Ennél az autónál futóműbeállítás után a gyártó előírja az első kamera kalibrálását is, különben a sávtartó elcsúszva lát. Nálatok megvan rá a Brain Bee, mindkettőt külön sorba teszem.' },
+  { r:'user',  t:'Igen, jó' },
+
+  { r:'agent', t:'Alkatrészben mivel számoljak: utángyártott, prémium (TRW, Febi) vagy gyári? A prémium kb. 10 ezerrel több, a gyári kb. 34 ezerrel.' },
+  { r:'user',  t:'TRW' },
+
+  { r:'agent', t:'A műszaki vizsgát is beírjam a végére, díjakkal együtt?' },
+  { r:'user',  t:'Igen, mehet' },
+
+  { r:'agent', t:'Összeraktam a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'estimate' },
+
+  // Második eset: itt VAN ár, mert fix munka
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: máshol cseréltek szélvédőt, azóta hibát ír a sávtartó. Mennyi a kalibrálás?' },
+  { r:'agent', t:'Első kamera kalibrálás kb. 25 000 Ft, ha a kamera tartója rendben van. Kérd el a márkát és az évjáratot, mert van, ahol a lökhárítóban radar is van, és az külön kalibrálás.' },
+  { r:'user',  t:'Oké, megkérdezem' },
+]
+
+// 4. EST.
+const EST = {
+  mid: 144_000,
+  items: [
+    { label:'Jobb első lengőkar, komplett (TRW)',     amt: 34_000 },
+    { label:'Hátsó fékbetét készlet (TRW)',           amt: 14_000 },
+    { label:'Munkadíj: 1,5 óra × 16 000 Ft',          amt: 24_000 },
+    { label:'Futóműbeállítás',                        amt: 16_000 },
+    { label:'ADAS első kamera kalibrálás',            amt: 25_000 },
+    { label:'Műszaki vizsga, díjakkal együtt',        amt: 29_000 },
+    { label:'Apróanyag',                              amt:  2_000 },
+  ],
+  note: 'A kamera kalibrálását a futóműbeállítás teszi szükségessé. A vizsga a javítás után, ugyanazon a napon.',
+  firstName: '',
+  timingShort: 'fél nap',
+  quoteNo: 'Á-2026/0419',
+  vehicle: [
+    ['Típus',     'Skoda Octavia IV 2.0 TDI, 2021'],
+    ['Vezetéstámogatás', 'Első kamera (sávtartó, vészfékező)'],
+    ['Alvázszám', 'TMBJR7NX0MY123456'],
+    ['Km-óra',    '124 000 km'],
+  ],
+  finding: 'Jobb első lengőkar gömbfeje kotyog (vizsgahiba). Hátsó fékbetétek 3 mm-re kopva. Lengőkarcsere után futóműbeállítás és első kamera kalibrálás szükséges, utána műszaki vizsga.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
