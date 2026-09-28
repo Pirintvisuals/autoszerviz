@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- ER-ZO Team, Fő út 177, 2351 Alsónémedi. Szerelői verzió
+       (see autoszerviz.html).
+
+       erzo.hu is parked, so the only facts are the logo ("Truck & Trailer")
+       and the address: Alsónémedi is the M0/M5 logistics belt. So this is
+       the first HEAVY demo: a curtainsider semi-trailer brake job, quoted
+       nettó because the customer is a fuvarozó, not a private person.
+
+       Expert moments: discs per axle in pairs; a seized caliper guide pin
+       gets its own repair kit line (otherwise uneven pad wear); the VIN
+       settles the axle make (BPW), which settles every brake part.
+
+       Second flow: an air leak on a tractor unit is not priced unseen,
+       because it can be the air bag or just a fitting.
+
+       Theme: black / red / white from the logo. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Black logo, red "TRUCK & TRAILER".
+const THEME = {
+  bg:'#0a0a0b', dark:'#161618', mid:'#2e2e33', brand:'#e11d2a', bright:'#f43f4b',
+  dot:'#fca5ab', chatBg:'#f8f8f8', tint:'#fde2e4', tint2:'#fdf1f2', line:'#ecdcde',
+  ink:'#2e2e33', inkSoft:'#b3121d', ring:'rgba(225,29,42,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'ER-ZO Team',
+    sub: 'Teherautó és pótkocsi szerviz',
+    tagline: 'Fő út 177, Alsónémedi',
+    initial: 'E',
+    logoSrc: '/erzo-team-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'teherautó szerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez az ER-ZO saját alkatrészeivel, óradíjával és munkáival számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Kb. egy perc volt. Tengelytípust, alkatrészt, munkaidőt és óradíjat nem kellett kikeresni, összeadni és begépelni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt kiküldöd a fuvarozónak:',
+    estimatedTotal: 'Nettó összesen',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat (nettó)',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt küldi ki a fuvarozónak',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Szerelői megállapítás',
+    sheetItems: 'Alkatrész és munkadíj',
+    sheetTotal: 'Nettó összesen (+27% ÁFA)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik jármű áll bent? Elég az alvázszám, vontatónál és pótkocsinál is.' },
+  { r:'user',  t:'WKESDP27071234567, pótkocsi' },
+
+  // Alvázszám-pillanat: tengelygyártó, ebből jön minden fékalkatrész
+  { r:'agent', t:'Megvan: Krone Profi Liner függönyponyvás félpótkocsi, 2017, 3 tengely, BPW tengelyek, tárcsafék. Mit találtál?' },
+  { r:'user',  t:'1. és 2. tengelyen a betét 4 mm. 1. tengelyen a tárcsák repedezettek' },
+
+  { r:'agent', t:'A 2. tengelyen a tárcsát mérted? Ha méreten belül van, ott csak betéttel számolok.' },
+  { r:'user',  t:'Mértem, méreten belül. Csak betét' },
+
+  // Szakértelem-pillanat: nyereg vezetőcsap
+  { r:'agent', t:'Betétcserénél a nyereg vezetőcsapjait is érdemes megnézni: ha szorul, féloldalasan kopik az új betét. Szorul valamelyik?' },
+  { r:'user',  t:'Egy nyeregnél szorul, mehet rá 1 javítókészlet' },
+
+  { r:'agent', t:'Alkatrészben mivel számoljak: gyári BPW, vagy minőségi utángyártott (pl. Textar)? A gyári kb. 38 ezerrel több összesen.' },
+  { r:'user',  t:'Textar' },
+
+  { r:'agent', t:'Összeraktam nettóban, a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'estimate' },
+
+  // Második eset: légrugó vagy csak csatlakozó
+  { r:'divider', t:'Másik eset: telefonon kérdez egy fuvarozó' },
+  { r:'user',  t:'Fuvarozó a vonalban: MAN TGX, hátul levegőt enged, mennyi?' },
+  { r:'agent', t:'Ezt látatlanban nem árazom: lehet a légrugó, de lehet csak egy csatlakozó vagy vezeték, és a kettő között több tízezer a különbség. Ha be tud állni, 15 perc alatt megvan a hiba, és utána egy perc alatt kész az ajánlat.' },
+  { r:'user',  t:'Oké, holnap reggel behozza' },
+]
+
+// 4. EST. Nettó árak, céges ügyfél.
+const EST = {
+  mid: 290_000,
+  items: [
+    { label:'Féktárcsa, 1. tengely, 2 db (BPW-hez)',              amt:  96_000 },
+    { label:'Fékbetét készlet, 1. és 2. tengely (Textar)',        amt:  80_000 },
+    { label:'Féknyereg vezetőcsap javítókészlet, 1 db',           amt:  18_000 },
+    { label:'Munkadíj: 5 óra × 18 000 Ft',                         amt:  90_000 },
+    { label:'Zsír, apróanyag',                                     amt:   6_000 },
+  ],
+  note: 'Nettó árak, a számlán +27% ÁFA. A 2. tengely tárcsái méreten belül vannak, azokat nem cseréljük.',
+  firstName: '',
+  timingShort: 'kb. 5 óra',
+  quoteNo: 'Á-2026/0417',
+  vehicle: [
+    ['Típus',     'Krone Profi Liner félpótkocsi, 2017'],
+    ['Tengelyek', '3 × BPW, tárcsafék'],
+    ['Alvázszám', 'WKESDP27071234567'],
+  ],
+  finding: '1. és 2. tengely fékbetétjei 4 mm-re kopva. 1. tengely féktárcsái repedezettek, csere szükséges. 2. tengely tárcsái méreten belül. Egy féknyereg vezetőcsapja szorul.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
