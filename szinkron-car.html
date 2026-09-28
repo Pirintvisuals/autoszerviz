@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Szinkron-Car Kft., Szadai út 11, 2112 Veresegyház. Since 1989.
+       Szerelői verzió (see autoszerviz.html).
+
+       szinkron-car.hu: javítás + autómentés + CSEREAUTÓ, autókölcsönző,
+       műszaki vizsga, gumi, karosszéria, alkatrész. A Google review on their
+       own homepage is a vonóhorog fit, so that's the priced job.
+
+       Expert moments: a 13-pin towbar on a CAN-bus VW needs a
+       járműspecifikus kábelszett, and afterwards the trailer mode must be
+       coded, or the parking sensors and ESP trailer stabilisation don't know
+       a trailer is on. And the thing only they offer: a csereautó for the
+       day, as its own line.
+
+       Second flow gives a figure: the vizsga is a fixed job; repairs found
+       during the pre-check get their own estimate.
+
+       Theme: sky blue + black from the logo. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Sky blue wrench, black lettering.
+const THEME = {
+  bg:'#0a1117', dark:'#0d2230', mid:'#174a66', brand:'#1a9fd6', bright:'#4cc3f0',
+  dot:'#a5e0f7', chatBg:'#f4f9fc', tint:'#dcf0fa', tint2:'#eef8fd', line:'#d3e8f2',
+  ink:'#174a66', inkSoft:'#0f7cab', ring:'rgba(26,159,214,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'Szinkron-Car',
+    sub: 'Autójavítás, csereautó, műszaki vizsga, gumi',
+    tagline: '1989 óta · Szadai út 11, Veresegyház',
+    initial: 'S',
+    logoSrc: '/szinkron-car-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a Szinkron-Car saját alkatrészeivel, óradíjával és csereautó-díjával számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Kb. egy perc volt. Vonóhorgot, kábelszettet, munkaidőt és csereautót nem kellett kikeresni, összeadni és begépelni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Munka leírása',
+    sheetItems: 'Alkatrész, munkadíj, csereautó',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'WVGZZZ5NZKW123456, 87e km. Levehető vonóhorgot kér rá' },
+
+  { r:'agent', t:'Megvan: VW Tiguan II, 2019, 2.0 TDI, 110 kW. Milyen elektromos csatlakozó kell, 7 vagy 13 pólusú?' },
+  { r:'user',  t:'13, lakókocsit húz' },
+
+  // Szakértelem-pillanat: járműspecifikus szett + kódolás
+  { r:'agent', t:'Ennél az autónál járműspecifikus kábelszettel számolok, mert CAN-buszra kötjük. Utána diagnosztikával be kell kódolni a pótkocsi-üzemmódot, különben a tolatóradar és az ESP pótkocsi-stabilizálás nem tud a vonóhorogról. Mindkettőt beteszem.' },
+  { r:'user',  t:'Igen, jó' },
+
+  { r:'agent', t:'Vonóhorogban mivel számoljak: Brink, Westfalia vagy olcsóbb (pl. Steinhof)? A Brink kb. 35 ezerrel több az olcsóbbnál.' },
+  { r:'user',  t:'Brink' },
+
+  // A Szinkron-Car saját pluszja: csereautó
+  { r:'agent', t:'Ez kb. egy nap. Kell az ügyfélnek csereautó arra a napra? Külön sorba teszem, ő dönt róla.' },
+  { r:'user',  t:'Igen, 1 nap' },
+
+  { r:'agent', t:'Összeraktam a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'estimate' },
+
+  // Második eset: fix munka, van ár
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: lejár a vizsgája, Opel Corsa 2012. Mennyi?' },
+  { r:'agent', t:'A műszaki vizsga díjakkal együtt kb. 29 000 Ft. Ha előtte átnézzük és vizsgahibát találunk, arra külön ajánlatot adunk, mielőtt bármihez hozzányúlunk.' },
+  { r:'user',  t:'Oké, megmondom neki' },
+]
+
+// 4. EST.
+const EST = {
+  mid: 235_000,
+  items: [
+    { label:'Levehető vonóhorog (Brink)',                  amt: 120_000 },
+    { label:'13 pólusú járműspecifikus kábelszett',        amt:  48_000 },
+    { label:'Munkadíj: 3 óra × 15 000 Ft',                 amt:  45_000 },
+    { label:'Pótkocsi-üzemmód kódolás diagnosztikával',    amt:  10_000 },
+    { label:'Csereautó, 1 nap',                            amt:  12_000 },
+  ],
+  note: 'A csereautó külön tétel, elhagyható. Kódolás nélkül a tolatóradar és az ESP nem érzékeli a pótkocsit.',
+  firstName: '',
+  timingShort: '1 munkanap',
+  quoteNo: 'Á-2026/0420',
+  vehicle: [
+    ['Típus',     'VW Tiguan II 2.0 TDI, 2019'],
+    ['Teljesítmény', '110 kW (150 LE)'],
+    ['Alvázszám', 'WVGZZZ5NZKW123456'],
+    ['Km-óra',    '87 000 km'],
+  ],
+  finding: 'Levehető vonóhorog felszerelése 13 pólusú, járműspecifikus kábelszettel, lakókocsi vontatásához. Felszerelés után pótkocsi-üzemmód kódolása szükséges.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
