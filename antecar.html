@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Client sample. AnteCar Márkafüggetlen Autószerviz (ASTON MILL Kft.),
+       Tündérfürt utca 7., 1106 Budapest. Mészáros Tibor. Mo-Cs 7-18, P 7-17.
+       Own words on antecar.hu: műszaki vizsga (saját vizsgasor), futóműállítás,
+       autójavítás, teljes körű diagnosztika (Autel MaxiSYS MS909, SGW),
+       gumiszerelés, klíma töltés/javítás/fertőtlenítés, szélvédő, autómentés,
+       TPMS, hibrid/elektromos, autóvásárlás előtti átvizsgálás.
+       Szerelői verzió (see autoszerviz.html).
+
+       WHY THIS DEMO IS BUILT THE WAY IT IS. Tibor's reply to the DM: "az ügyfél
+       csak tüneteket tud maximum elmondani, a járművet diagnosztizálni kell,
+       utána lehet pontos árat mondani. Még mi sem tudjuk megmondani, hogy a
+       diagnosztika mennyibe fog kerülni." He is right, and the demo agrees
+       with him out loud:
+
+       1. The tool starts AFTER the diagnosis. The mechanic has found the leak
+          and types what he found. Nobody prices a symptom.
+       2. The priced job is a klíma "nem hűt", the textbook case where the
+          customer's words are worthless (a leak, a compressor and a
+          dryer are three different bills) and the finding decides everything.
+       3. Expert moment: system opened -> szárítószűrő goes in, R1234yf by
+          model year. Things a mechanic adds by habit and forgets on a
+          quote.
+       4. Second flow is the phone call he described. The tool REFUSES to price
+          the symptom, sends the car to an átvizsgálás first, and only after
+          his finding does a quote appear. No figure is invented for the
+          diagnosis itself, because he said even he can't.
+
+       All amounts are gross sample figures. The hourly rate is a placeholder,
+       AnteCar's real one goes in when it is built for them.
+
+       Theme off their logo: near-black + amber. Register: tegezés towards the
+       mechanic (workshop tool), magázás in the CTA. No em dashes. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Near-black and amber, off the logo.
+const THEME = {
+  bg:'#151112', dark:'#241e20', mid:'#4a3c3f', brand:'#eca73f', bright:'#f5bd62',
+  dot:'#f7d089', chatBg:'#fffaf1', tint:'#fbeacc', tint2:'#fdf5e6', line:'#f0dcb8',
+  ink:'#241e20', inkSoft:'#9a6512', ring:'rgba(236,167,63,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'AnteCar',
+    sub: 'Autójavítás, diagnosztika, klíma, futómű, műszaki vizsga',
+    tagline: 'Márkafüggetlen autószerviz · Tündérfürt utca 7., Budapest',
+    initial: 'A',
+    logoSrc: '/antecar-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez az AnteCar saját óradíjával, alkatrészárával és munkáival számoljon, és csak a diagnosztika után adjon árat?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'A diagnosztikát Ön végezte el, ezt semmi nem váltja ki. Ami utána jött, a tételek kikeresése, összeadása és begépelése, az kb. egy perc volt.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő, a diagnosztika után',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Diagnosztika eredménye',
+    sheetItems: 'Alkatrész és munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic, after the diagnosis. Workshop shorthand.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'TMBJG7NE5J0123456, 96e km. Nem hűt a klíma, átnéztem' },
+
+  { r:'agent', t:'Megvan: Skoda Octavia III, 2018, 1.6 TDI, 85 kW. Mit találtál?' },
+  { r:'user',  t:'UV-val a kondenzátor szivárog, elöl a hűtő előtt. Kompresszor jó' },
+
+  // Szakértelem-pillanat: nyitott rendszer + gáz típusa
+  { r:'agent', t:'Akkor kondenzátorcsere. A rendszer nyitva lesz, ezért a szárítószűrőt is beteszem, azt nem szabad újra felhasználni. Vákuumozás, majd töltés R1234yf-fel, mert 2018-as az autó. Mindet beírom.' },
+  { r:'user',  t:'Igen, jó' },
+
+  { r:'agent', t:'Kondenzátorból mivel számoljak: utángyártott, prémium (pl. Valeo, Mahle) vagy gyári? A prémium kb. 18 ezerrel több az utángyártottnál.' },
+  { r:'user',  t:'Prémium' },
+
+  // Ami a számláról szokott lemaradni, külön sorban, az ügyfél dönt
+  { r:'agent', t:'Rendben. Nyitott volt a rendszer, a pollenszűrőt és a fertőtlenítést külön sorba teszem. Az ügyfél dönt róla, elhagyható.' },
+  { r:'user',  t:'Mehet' },
+
+  { r:'agent', t:'Összeraktam a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'estimate' },
+
+  // Második eset: az, amit Tibor mondott, és a tool vele ért egyet
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: kátyúzásnál kopog elöl, Golf 2014. Mennyi lesz?' },
+  { r:'agent', t:'Erre nem adok árat, mert tünetből csak tippelni lehetne. Lehet stabilizátor-összekötő, gumibak, lengőkar vagy lengéscsillapító-tartó, és ezek ára nagyon eltér. Mondd neki: előbb átnézzük a futóművet, utána pontos, tételes ajánlatot kap, mielőtt bármihez hozzányúlunk. Foglaljak neki időpontot?' },
+  { r:'user',  t:'Igen, csütörtök reggelre' },
+  { r:'agent', t:'Felírtam: csütörtök 8:00, futómű-átvizsgálás. Ha megvan a lelet, beírod ide, és jön a tételes ajánlat.' },
+]
+
+// 4. EST. Gross sample figures.
+const EST = {
+  mid: 161_000,
+  items: [
+    { label:'Klímakondenzátor (prémium, Valeo)',              amt: 62_000 },
+    { label:'Szárítószűrő',                                   amt:  9_500 },
+    { label:'Klímagáz R1234yf, 550 g',                        amt: 28_000 },
+    { label:'Kompresszorolaj, UV-adalék, tömítőgyűrűk',       amt:  4_500 },
+    { label:'Munkadíj: 2,5 óra × 18 000 Ft (csere, vákuum, töltés)', amt: 45_000 },
+    { label:'Pollenszűrő csere és fertőtlenítés (elhagyható)', amt: 12_000 },
+  ],
+  note: 'A diagnosztika után készült, a szivárgás helyének ismeretében. A pollenszűrő és a fertőtlenítés külön tétel, elhagyható.',
+  firstName: '',
+  timingShort: 'kb. 3 óra',
+  quoteNo: 'Á-2026/0431',
+  vehicle: [
+    ['Típus',        'Skoda Octavia III 1.6 TDI, 2018'],
+    ['Teljesítmény', '85 kW (115 LE)'],
+    ['Alvázszám',    'TMBJG7NE5J0123456'],
+    ['Km-óra',       '96 000 km'],
+  ],
+  finding: 'Az ügyfél panasza: nem hűt a klíma. UV-s szivárgásvizsgálat: a klímakondenzátor szivárog, a kompresszor rendben. Kondenzátor és szárítószűrő csere, vákuumozás, R1234yf töltés szükséges.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>

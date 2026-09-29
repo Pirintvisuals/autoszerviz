@@ -26,6 +26,7 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | Emőd Autó és Gumiszerviz, Emőd (szerelői verzió) | `/emod-auto` |
 | Haidinger Autószerviz (Aba Autószerviz, Q-Service), Aba (szerelői verzió) | `/haidinger-autoszerviz` |
 | Szinkron-Car Kft., Veresegyház (szerelői verzió) | `/szinkron-car` |
+| AnteCar Márkafüggetlen Autószerviz, Budapest X. (szerelői verzió, klíma a diagnosztika után + tünetre nem ad árat) | `/antecar` |
 
 ## Szerelői verzió (a sablon ezt adja, 2026-09-25-től)
 
