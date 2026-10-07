@@ -19,8 +19,10 @@
           estimate belongs to the car. That's the pitch: the unpaid quoting
           time goes away, not "more leads".
 
-       3. THE ALVÁZSZÁM MOMENT STAYS. It's still the one exchange that proves
-          accuracy: the agent tells the mechanic which variant to order.
+       3. NO AI EXPERT, NO VIN MAGIC (2026-10-07). The tool never diagnoses or
+          advises; it asks only what splits the parts (e.g. disc size) and adds
+          extras as the shop's own rules. The car is typed in, because VIN
+          lookup isn't live. No phone/symptom price case either.
 
        4. THE FINALE IS A FINISHED ESTIMATE SHEET (CONFIG.mode = 'mechanic'
           in the engine), not an owner lead card: jármű, megállapítás, tételek,
@@ -68,7 +70,7 @@ const CONFIG = {
   ctaText: 'Szeretné, hogy ez a saját alkatrészeivel, óradíjával és munkáival számoljon?',
   ctaButton: 'Beszéljünk 15 percet →',
   // The whole pitch in one line: nem Ön gépeli be, nem Ön keresi ki.
-  ownerBenefit: 'Kb. egy perc volt. Alkatrészt, munkaidőt és óradíjat nem kellett kikeresni, összeadni és begépelni.',
+  ownerBenefit: 'Alkatrészt, munkaidőt és óradíjat nem kellett összeadni és begépelni: a tételes ajánlat magától állt össze.',
   labels: {
     titleSuffix: 'Árajánlat-segéd (minta)',
     sampleBadge: 'Minta · nem élő rendszer',
@@ -98,36 +100,32 @@ const CONFIG = {
 }
 
 // 3. MSGS. 'user' = the mechanic. Short, shorthand, the way you'd type with
-// greasy hands. The agent only asks what it can't work out on its own.
+// greasy hands. The tool never diagnoses or gives expert advice: the mechanic
+// says what he found, the tool only asks what splits the parts (size, brand)
+// and adds the extras the SHOP set up as rules. No VIN magic (not live yet).
 const MSGS = [
-  // ── 1. autó: elég az alvázszám ──
-  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
-  { r:'user',  t:'TMBJG7NE5F0123456, 218e km' },
+  // ── 1. autó: a szerelő adja meg ──
+  { r:'agent', t:'Szia! Melyik autó áll bent? Márka, típus, motor.' },
+  { r:'user',  t:'Octavia III 1.6 TDI, CLHA, 2015, 218e km' },
 
-  // ── 2. alvázszámból kikeresve, és rögtön: mi a gond ──
-  { r:'agent', t:'Megvan: Skoda Octavia III, 2015, 1.6 TDI, CLHA motor, 77 kW. Mit találtál?' },
-  { r:'user',  t:'Fékezésnél rázza a kormányt. Első tárcsák vetemedtek, betét 3 mm' },
+  // ── 2. mit talált: a szerelő mondja, nem a program ──
+  { r:'agent', t:'Skoda Octavia III 1.6 TDI (CLHA, 77 kW). Mi a munka?' },
+  { r:'user',  t:'Első tárcsák vetemedtek, betét 3 mm. Hátul jó, 7 mm' },
 
-  // ── 3. alvázszám-pillanat: a pontosság bizonyítéka ──
-  { r:'agent', t:'Akkor első tárcsa + betét. Figyelj, erre az alvázszámra a 288 mm-es első tárcsa kell, nem a 312-es, a típuson belül mindkettő előfordul. Hátul mi a helyzet?' },
-  { r:'user',  t:'Hátul jó, 7 mm a betét' },
+  // ── 3. ami az alkatrészt eldönti: kérdez, nem találgat ──
+  { r:'agent', t:'Első tárcsa + betét. Erre a típusra kétféle első tárcsa van: 288 mm és 312 mm. Melyik van rajta?' },
+  { r:'user',  t:'288' },
 
-  // ── 4. alkatrész-kategória, egysoros ár-következménnyel ──
-  { r:'agent', t:'Mivel számoljak: utángyártott, prémium (ATE, Brembo) vagy gyári? A prémium kb. 11 ezerrel több az utángyártottnál, a gyári kb. 29 ezerrel.' },
+  // ── 4. márka a műhely saját listájából ──
+  { r:'agent', t:'Melyik márkával számoljak a listádból: utángyártott, prémium (ATE, Brembo) vagy gyári?' },
   { r:'user',  t:'Prémium, ATE' },
 
-  // ── 5. szakértelem-pillanat: amit a szerelő is felajánlana ──
-  { r:'agent', t:'Rendben. Fékfolyadékot mérted? Ha régi, külön sorba teszem, és az ügyfél dönt róla.' },
-  { r:'user',  t:'3%-ot mutat, mehet bele' },
+  // ── 5. a műhely saját szabálya, nem a program véleménye ──
+  { r:'agent', t:'Nálatok fékcseréhez a fékfolyadék is fel van véve külön sorba (ezt ti állítottátok be). Beírjam?' },
+  { r:'user',  t:'Igen, 3%-ot mutat' },
 
-  { r:'agent', t:'Összeraktam, a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'agent', t:'Összeraktam a te óradíjaddal és árlistáddal.' },
   { r:'estimate' },
-
-  // ── Második, rövid eset: telefonon kérdez az ügyfél, a szerelő csak továbbítja ──
-  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
-  { r:'user',  t:'Ügyfél a vonalban: Focus 2013 1.6 benzin, kuplung. Mennyi?' },
-  { r:'agent', t:'Kuplungszett + kinyomócsapágy, 5 óra munka: kb. 158 000 Ft. Ha a lendkerék is cserés, +45 000 Ft, azt csak szétszedve látod. Ha bediktálja az alvázszámot, pontosítom.' },
-  { r:'user',  t:'Köszi, megmondom neki' },
 ]
 
 // 4. EST. The estimate sheet. PLACEHOLDER: óradíj és árak a szerviz saját
@@ -141,17 +139,16 @@ const EST = {
     { label:'Fékfolyadék csere (DOT4, 0,5 óra + anyag)',      amt: 14_000 },
     { label:'Féktisztító, apróanyag',                         amt:  3_000 },
   ],
-  note: 'Az alvázszám alapján beazonosított alkatrészekkel. A fékfolyadék külön tétel, elhagyható.',
+  note: 'Minta árakkal. A fékfolyadék külön tétel, elhagyható.',
   firstName: '',
   timingShort: 'kb. 2 óra',
   quoteNo: 'Á-2026/0412',
   vehicle: [
     ['Típus',          'Skoda Octavia III 1.6 TDI, 2015'],
     ['Motorkód',       'CLHA, 77 kW'],
-    ['Alvázszám',      'TMBJG7NE5F0123456'],
     ['Km-óra',         '218 000 km'],
   ],
-  finding: 'Fékezéskor kormányrázás. Első féktárcsák vetemedtek, első betétek 3 mm-re kopva. Hátsó fék rendben (betét 7 mm). Fékfolyadék víztartalma 3%, csere javasolt.',
+  finding: 'Első féktárcsák (288 mm) vetemedtek, első betétek 3 mm-re kopva. Hátsó fék rendben (betét 7 mm). Fékfolyadék víztartalma 3%, csere javasolt.',
 }
 </script>
 <script src="/quote-agent.js"></script>
