@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Répási Autószerviz (R-S Autó Bt., Répási Róbert), Mártírok útja 11,
+       8900 Zalaegerszeg. Szerelői verzió (see autoszerviz.html).
+
+       repasi-autoszerviz.uzleti.hu: own műszaki vizsga, and a GINOP grant
+       that bought a futómű geometria machine ("a beállítások duplájára
+       nőttek"), a COM diagnostic kit, a klímatöltő and a decarbonizer
+       ("egyedi innovatív motor beltéri koromtalanítás"). Also gumi + gumihotel.
+
+       Priced job chains their own services: inner-edge tyre wear, caused by
+       a loose kormányösszekötő gömbfej -> gömbfej -> the alignment is
+       mandatory after it -> front tyres in a pair. The line they're proudest
+       of (geometria) is the one the agent insists on.
+
+       Second flow is about their unique decarbonizer, and refuses to promise
+       it unseen: smoke + no power can be korom, but also EGR, turbo or
+       injector. Diagnose first, then price.
+
+       Logo: their wide wordmark restacked onto two lines into a square
+       (repasi-autoszerviz-logo.png), no new artwork. Theme: navy + blue. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Navy "Répási", blue "Autószerviz".
+const THEME = {
+  bg:'#0a1226', dark:'#101f4a', mid:'#1c3576', brand:'#2449b5', bright:'#5b80e6',
+  dot:'#aec1f5', chatBg:'#f5f7fc', tint:'#e1e8fa', tint2:'#eff3fd', line:'#d8e0f2',
+  ink:'#1c3576', inkSoft:'#1f3fa0', ring:'rgba(36,73,181,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'Répási Autószerviz',
+    sub: 'Autószerviz, műszaki vizsga, futómű, gumi',
+    tagline: 'Mártírok útja 11, Zalaegerszeg',
+    initial: 'R',
+    logoSrc: '/repasi-autoszerviz-logo.png',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a Répási Autószerviz saját alkatrész- és gumiáraival, óradíjával számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Kb. egy perc volt. Alkatrészt, gumit, munkaidőt és óradíjat nem kellett kikeresni, összeadni és begépelni.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Szerelői megállapítás',
+    sheetItems: 'Alkatrész, gumi, munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
+  { r:'user',  t:'W0LBD6EB0HG123456, 156e km' },
+
+  { r:'agent', t:'Megvan: Opel Astra K, 2017, 1.6 CDTI, 81 kW. Mit találtál?' },
+  { r:'user',  t:'Elöl mindkét gumi belső széle lekopott. Bal kormányösszekötő gömbfej kotyog' },
+
+  { r:'agent', t:'A belső szélen kopás tipikusan összetartás-hiba, ezt a kotyogó gömbfej okozza. A jobb oldali gömbfejet is nézted? Ha az még szoros, csak a balt teszem bele.' },
+  { r:'user',  t:'Jobb szoros, csak bal' },
+
+  // Szakértelem-pillanat: gömbfej után geometria kötelező
+  { r:'agent', t:'Gömbfejcsere után futómű geometria beállítás kell, különben az új gumi is ugyanígy kopik le. Beteszem külön sorba. A két első gumi cserés? Milyen méret és milyen gumi van rajta?' },
+  { r:'user',  t:'205/55 R16, négyévszakos. Abból kettő, középkategória' },
+
+  { r:'agent', t:'Rendben, 2 db négyévszakos 205/55 R16, középkategória, szereléssel és centírozással. Összeraktam a te óradíjaddal és a beszállítói árakkal.' },
+  { r:'estimate' },
+
+  // Második eset: a koromtalanítás, de látatlanban nem ígér
+  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
+  { r:'user',  t:'Ügyfél a vonalban: dízel, füstöl és nincs ereje. Segít rajta a koromtalanítás?' },
+  { r:'agent', t:'Látatlanban nem ígérem: lehet koromlerakódás, de lehet EGR-szelep, turbó vagy befecskendező is. Hozza be, diagnosztikával kiolvassuk, és ha korom, a koromtalanításra is egy perc alatt megvan az ajánlat.' },
+  { r:'user',  t:'Oké, megmondom neki' },
+]
+
+// 4. EST.
+const EST = {
+  mid: 104_000,
+  items: [
+    { label:'Bal kormányösszekötő gömbfej (TRW)',              amt:  9_000 },
+    { label:'Négyévszakos gumi 205/55 R16, 2 db (középkat.)',  amt: 64_000 },
+    { label:'Munkadíj: gömbfejcsere, 0,5 óra × 14 000 Ft',     amt:  7_000 },
+    { label:'Gumiszerelés, centírozás, 2 kerék',               amt:  8_000 },
+    { label:'Futómű geometria beállítás',                      amt: 15_000 },
+    { label:'Apróanyag',                                       amt:  1_000 },
+  ],
+  note: 'A geometria beállítás a gömbfejcsere miatt szükséges, nélküle az új gumik is egyenetlenül kopnának.',
+  firstName: '',
+  timingShort: 'kb. 1,5 óra',
+  quoteNo: 'Á-2026/0421',
+  vehicle: [
+    ['Típus',      'Opel Astra K 1.6 CDTI, 2017'],
+    ['Kerékméret', '205/55 R16'],
+    ['Alvázszám',  'W0LBD6EB0HG123456'],
+    ['Km-óra',     '156 000 km'],
+  ],
+  finding: 'Első gumik belső széle lekopott (összetartás-hiba). Bal kormányösszekötő gömbfej kotyog, jobb rendben. Gömbfejcsere, két első gumi csere, utána futómű geometria beállítás.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
