@@ -12,14 +12,12 @@
        nőttek"), a COM diagnostic kit, a klímatöltő and a decarbonizer
        ("egyedi innovatív motor beltéri koromtalanítás"). Also gumi + gumihotel.
 
-       Priced job chains their own services: inner-edge tyre wear, caused by
-       a loose kormányösszekötő gömbfej -> gömbfej -> the alignment is
-       mandatory after it -> front tyres in a pair. The line they're proudest
-       of (geometria) is the one the agent insists on.
-
-       Second flow is about their unique decarbonizer, and refuses to promise
-       it unseen: smoke + no power can be korom, but also EGR, turbo or
-       injector. Diagnose first, then price.
+       Built on the 2026-10-07 template rules: the car is typed in (no VIN
+       lookup, not live), the mechanic gives the finding, the tool never
+       diagnoses or advises. It only asks what splits the parts (tyre size,
+       brand) and adds the extra as the shop's own rule: here, futómű
+       geometria after a gömbfej swap, the service their grant machine runs.
+       No phone/symptom case.
 
        Logo: their wide wordmark restacked onto two lines into a square
        (repasi-autoszerviz-logo.png), no new artwork. Theme: navy + blue. -->
@@ -57,7 +55,7 @@ const CONFIG = {
   ctaTitle: 'Ez csak egy minta.',
   ctaText: 'Szeretné, hogy ez a Répási Autószerviz saját alkatrész- és gumiáraival, óradíjával számoljon?',
   ctaButton: 'Beszéljünk 15 percet →',
-  ownerBenefit: 'Kb. egy perc volt. Alkatrészt, gumit, munkaidőt és óradíjat nem kellett kikeresni, összeadni és begépelni.',
+  ownerBenefit: 'Alkatrészt, gumit, munkaidőt és óradíjat nem kellett összeadni és begépelni: a tételes ajánlat magától állt össze.',
   labels: {
     titleSuffix: 'Árajánlat-segéd (minta)',
     sampleBadge: 'Minta · nem élő rendszer',
@@ -86,29 +84,30 @@ const CONFIG = {
   },
 }
 
-// 3. MSGS. 'user' = the mechanic.
+// 3. MSGS. 'user' = the mechanic. The tool never diagnoses or advises: the
+// mechanic says what he found, the tool asks only what splits the parts and
+// adds the extra the SHOP set up as a rule. No VIN magic (not live yet).
 const MSGS = [
-  { r:'agent', t:'Szia! Melyik autó áll bent? Elég az alvázszám, a többit kikeresem.' },
-  { r:'user',  t:'W0LBD6EB0HG123456, 156e km' },
+  { r:'agent', t:'Szia! Melyik autó áll bent? Márka, típus, motor.' },
+  { r:'user',  t:'Astra K 1.6 CDTI, 2017, 156e km' },
 
-  { r:'agent', t:'Megvan: Opel Astra K, 2017, 1.6 CDTI, 81 kW. Mit találtál?' },
-  { r:'user',  t:'Elöl mindkét gumi belső széle lekopott. Bal kormányösszekötő gömbfej kotyog' },
+  { r:'agent', t:'Opel Astra K 1.6 CDTI (81 kW). Mi a munka?' },
+  { r:'user',  t:'Bal kormányösszekötő gömbfej csere, jobb jó. Két első gumi csere, belső széle lekopott' },
 
-  { r:'agent', t:'A belső szélen kopás tipikusan összetartás-hiba, ezt a kotyogó gömbfej okozza. A jobb oldali gömbfejet is nézted? Ha az még szoros, csak a balt teszem bele.' },
-  { r:'user',  t:'Jobb szoros, csak bal' },
+  // ami az alkatrészt eldönti: kérdez, nem találgat
+  { r:'agent', t:'Milyen méretű gumi kell?' },
+  { r:'user',  t:'205/55 R16, négyévszakos' },
 
-  // Szakértelem-pillanat: gömbfej után geometria kötelező
-  { r:'agent', t:'Gömbfejcsere után futómű geometria beállítás kell, különben az új gumi is ugyanígy kopik le. Beteszem külön sorba. A két első gumi cserés? Milyen méret és milyen gumi van rajta?' },
-  { r:'user',  t:'205/55 R16, négyévszakos. Abból kettő, középkategória' },
+  // márka a műhely saját listájából
+  { r:'agent', t:'Melyik márkával számoljak a listádból? Gumiból prémium, közép vagy olcsóbb, gömbfejből utángyártott, prémium (TRW) vagy gyári?' },
+  { r:'user',  t:'Gumi közép, gömbfej TRW' },
 
-  { r:'agent', t:'Rendben, 2 db négyévszakos 205/55 R16, középkategória, szereléssel és centírozással. Összeraktam a te óradíjaddal és a beszállítói árakkal.' },
+  // a műhely saját szabálya, nem a program véleménye
+  { r:'agent', t:'Nálatok gömbfejcseréhez a futómű geometria beállítás is fel van véve külön sorba (ezt ti állítottátok be). Beírjam?' },
+  { r:'user',  t:'Igen' },
+
+  { r:'agent', t:'Összeraktam a te óradíjaddal és árlistáddal.' },
   { r:'estimate' },
-
-  // Második eset: a koromtalanítás, de látatlanban nem ígér
-  { r:'divider', t:'Másik eset: telefonon kérdez valaki' },
-  { r:'user',  t:'Ügyfél a vonalban: dízel, füstöl és nincs ereje. Segít rajta a koromtalanítás?' },
-  { r:'agent', t:'Látatlanban nem ígérem: lehet koromlerakódás, de lehet EGR-szelep, turbó vagy befecskendező is. Hozza be, diagnosztikával kiolvassuk, és ha korom, a koromtalanításra is egy perc alatt megvan az ajánlat.' },
-  { r:'user',  t:'Oké, megmondom neki' },
 ]
 
 // 4. EST.
@@ -122,17 +121,16 @@ const EST = {
     { label:'Futómű geometria beállítás',                      amt: 15_000 },
     { label:'Apróanyag',                                       amt:  1_000 },
   ],
-  note: 'A geometria beállítás a gömbfejcsere miatt szükséges, nélküle az új gumik is egyenetlenül kopnának.',
+  note: 'Minta árakkal. A geometria beállítás külön tétel.',
   firstName: '',
   timingShort: 'kb. 1,5 óra',
   quoteNo: 'Á-2026/0421',
   vehicle: [
     ['Típus',      'Opel Astra K 1.6 CDTI, 2017'],
     ['Kerékméret', '205/55 R16'],
-    ['Alvázszám',  'W0LBD6EB0HG123456'],
     ['Km-óra',     '156 000 km'],
   ],
-  finding: 'Első gumik belső széle lekopott (összetartás-hiba). Bal kormányösszekötő gömbfej kotyog, jobb rendben. Gömbfejcsere, két első gumi csere, utána futómű geometria beállítás.',
+  finding: 'Bal kormányösszekötő gömbfej cserés, jobb rendben. Két első gumi belső széle lekopott, csere szükséges. Utána futómű geometria beállítás.',
 }
 </script>
 <script src="/quote-agent.js"></script>
