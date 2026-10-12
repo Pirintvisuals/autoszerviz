@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- JAM Autójavító Kft., Berni u. 1., 1045 Budapest. Since 1993.
+       Szerelői verzió, 2026-10-07 template rules (see autoszerviz.html).
+
+       jamauto.hu: karosszéria, elemcsere, fényezés, állapotfelmérés; insurers
+       send them claimants, and insurance jobs are priced through the
+       insurer's kárfelvétel. So the demo is the job the tool CAN help with:
+       a private-pay (saját zsebből) body + paint job.
+
+       Rules followed: car typed in (no VIN lookup), the mechanic gives the
+       finding, the tool only asks what splits the parts (parking sensors =
+       bumper variant, színkód, brand), and the beszínezés of the next panel
+       is framed as the shop's own rule, not the tool's opinion. No phone or
+       symptom case.
+
+       Their contact (FB) said they have "saját weblap szerkesztő" and
+       assumed this was a website thing. It isn't: the page never mentions
+       a website, it's a workshop tool.
+
+       Logo: their wide wordmark restacked into a square
+       (jam-autojavito-logo.png), no new artwork. Theme: red + near-black. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Red wordmark.
+const THEME = {
+  bg:'#0c0b0c', dark:'#1a1617', mid:'#3a2e30', brand:'#d7262d', bright:'#f04d53',
+  dot:'#fba9ac', chatBg:'#f9f7f7', tint:'#fbe1e2', tint2:'#fdf1f1', line:'#eedadb',
+  ink:'#3a2e30', inkSoft:'#b3171e', ring:'rgba(215,38,45,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'JAM Autójavító',
+    sub: 'Karosszériajavítás, elemcsere, fényezés',
+    tagline: '1993 óta · Berni u. 1., Budapest IV.',
+    initial: 'J',
+    logoSrc: '/jam-autojavito-logo.png',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'karosszéria',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a munkafelvevő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a JAM saját alkatrész- és fényezési áraival, óradíjával számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Alkatrészt, fényezést, munkaidőt és óradíjat nem kellett összeadni és begépelni: a tételes ajánlat magától állt össze.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a munkafelvevő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Átfutás',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Állapotfelmérés',
+    sheetItems: 'Alkatrész, fényezés, munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the munkafelvevő / karosszérialakatos. The tool never
+// diagnoses or advises; it asks what splits the parts and applies the
+// shop's own rules.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Márka, típus, motor.' },
+  { r:'user',  t:'Yaris 1.5 hibrid, 2019, 74e km. Saját zsebből fizeti' },
+
+  { r:'agent', t:'Toyota Yaris 1.5 Hybrid (XP130). Mi a munka?' },
+  { r:'user',  t:'Hátsó lökhárító cserés. Bal hátsó sárvédő horpadt, javítható, fényezni kell' },
+
+  // ami az alkatrészt eldönti
+  { r:'agent', t:'Van parkolószenzor a hátsó lökhárítóban? Más a lökhárító, ha van.' },
+  { r:'user',  t:'Nincs' },
+
+  { r:'agent', t:'Mi a színkód?' },
+  { r:'user',  t:'1F7, ezüst metál' },
+
+  // márka a műhely saját listájából
+  { r:'agent', t:'Lökhárítóból melyikkel számoljak a listádból: utángyártott vagy gyári?' },
+  { r:'user',  t:'Gyári' },
+
+  // a műhely saját szabálya
+  { r:'agent', t:'Nálatok metál sárvédő fényezésénél a szomszédos elem beszínezése fel van véve külön sorba (ezt ti állítottátok be). Beírjam a bal hátsó ajtóra?' },
+  { r:'user',  t:'Igen' },
+
+  { r:'agent', t:'Összeraktam a te óradíjaddal és árlistáddal.' },
+  { r:'estimate' },
+]
+
+// 4. EST. Gross sample figures.
+const EST = {
+  mid: 272_000,
+  items: [
+    { label:'Hátsó lökhárító, gyári, alapozott',            amt: 72_000 },
+    { label:'Lökhárító fényezés, 1F7 metál',                amt: 58_000 },
+    { label:'Bal hátsó sárvédő horpadásjavítás, 2 óra × 16 000 Ft', amt: 32_000 },
+    { label:'Bal hátsó sárvédő fényezés, 1F7 metál',        amt: 62_000 },
+    { label:'Bal hátsó ajtó beszínezés',                    amt: 28_000 },
+    { label:'Lökhárító bontás-szerelés, 1 óra × 16 000 Ft', amt: 16_000 },
+    { label:'Patentek, apróanyag',                          amt:  4_000 },
+  ],
+  note: 'Minta árakkal. Saját fizetésű javítás, nem biztosítói kalkuláció. A beszínezés külön tétel.',
+  firstName: '',
+  timingShort: '3 munkanap',
+  quoteNo: 'Á-2026/0422',
+  vehicle: [
+    ['Típus',    'Toyota Yaris 1.5 Hybrid (XP130), 2019'],
+    ['Színkód',  '1F7 ezüst metál'],
+    ['Km-óra',   '74 000 km'],
+  ],
+  finding: 'Hátsó lökhárító cserés (parkolószenzor nélküli). Bal hátsó sárvédő horpadt, javítható, fényezés szükséges. Bal hátsó ajtó beszínezése.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>

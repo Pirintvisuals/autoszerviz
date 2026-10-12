@@ -27,6 +27,7 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | Haidinger Autószerviz (Aba Autószerviz, Q-Service), Aba (szerelői verzió) | `/haidinger-autoszerviz` |
 | Szinkron-Car Kft., Veresegyház (szerelői verzió) | `/szinkron-car` |
 | Répási Autószerviz (R-S Autó Bt.), Zalaegerszeg (szerelői verzió) | `/repasi-autoszerviz` |
+| JAM Autójavító Kft., Budapest IV. (karosszéria, szerelői verzió) | `/jam-autojavito` |
 | AnteCar Márkafüggetlen Autószerviz, Budapest X. (szerelői verzió, klíma a diagnosztika után + tünetre nem ad árat) | `/antecar` |
 
 ## Szerelői verzió (a sablon ezt adja, 2026-09-25-től)
