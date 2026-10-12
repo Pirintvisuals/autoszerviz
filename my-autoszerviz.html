@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- MY Autószerviz, Gyár utca 11 (20. raktár), 1222 Budapest XXII.
+       Szerelői verzió, 2026-10-07 template rules (see autoszerviz.html).
+
+       myautoszerviz.hu: "az első hely Magyarországon, ahol önkiszolgáló
+       műhely és profi autószerviz egyesül", and "elfogadjuk a hozott
+       alkatrészt". So the priced job is a kuplungcsere with the customer's
+       own parts: the tool asks only what splits the parts (what's in the
+       kit, who supplies the gear oil) and applies the shop's own rule, the
+       hozott-alkatrészes óradíj. The kit sits on the sheet at 0 Ft.
+
+       Rules followed: car typed in (no VIN), the mechanic gives the job,
+       no diagnosing or advice, no phone/symptom case.
+
+       Theme: sky blue car outline + orange "My" from the logo. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Sky blue outline, orange "My".
+const THEME = {
+  bg:'#08151e', dark:'#0c2433', mid:'#16506f', brand:'#1ea0dc', bright:'#4fc0f0',
+  dot:'#a8def7', chatBg:'#f4f9fc', tint:'#dcf0fa', tint2:'#eef8fd', line:'#d3e8f2',
+  ink:'#16506f', inkSoft:'#0f7cb0', ring:'rgba(30,160,220,0.40)', cta:'#f39200', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'MY Autószerviz',
+    sub: 'Profi szerviz és önkiszolgáló műhely',
+    tagline: 'Gyár utca 11, Budapest XXII.',
+    initial: 'M',
+    logoSrc: '/my-autoszerviz-logo.jpg',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez a MY Autószerviz saját óradíjaival, hozott és saját alkatrészes áraival számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Alkatrészt, munkaidőt és óradíjat nem kellett összeadni és begépelni: a tételes ajánlat magától állt össze, a hozott alkatrészes óradíjjal.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Munka leírása',
+    sheetItems: 'Alkatrész és munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic. The tool never diagnoses or advises; it
+// asks what splits the parts and applies the shop's own rules.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Márka, típus, motor.' },
+  { r:'user',  t:'Focus III 1.6 benzin, 2014, 131e km' },
+
+  { r:'agent', t:'Ford Focus III 1.6 benzin. Mi a munka?' },
+  { r:'user',  t:'Kuplungcsere. Az ügyfél hozta a szettet' },
+
+  // ami az alkatrészt eldönti
+  { r:'agent', t:'Mi van a hozott szettben? Benne van a kinyomócsapágy?' },
+  { r:'user',  t:'Igen, 3 részes szett' },
+
+  // a műhely saját szabályai
+  { r:'agent', t:'Nálatok hozott alkatrésznél a hozott alkatrészes óradíj van beállítva, és a szett 0 Ft-tal, „ügyfél hozta” megjegyzéssel kerül az ajánlatra (ezt ti állítottátok be).' },
+  { r:'agent', t:'Kuplungcseréhez a váltóolaj is fel van véve külön sorba. Tőletek legyen, vagy azt is hozza?' },
+  { r:'user',  t:'Tőlünk' },
+
+  { r:'agent', t:'Összeraktam a te óradíjaddal és árlistáddal.' },
+  { r:'estimate' },
+]
+
+// 4. EST. Gross sample figures.
+const EST = {
+  mid: 102_000,
+  items: [
+    { label:'Kuplungszett, 3 részes (ügyfél hozta)',                  amt:      0 },
+    { label:'Munkadíj: 5 óra × 18 000 Ft (hozott alkatrészes óradíj)', amt: 90_000 },
+    { label:'Váltóolaj, 2 l',                                         amt:  9_000 },
+    { label:'Apróanyag',                                              amt:  3_000 },
+  ],
+  note: 'Minta árakkal. A kuplungszett hozott alkatrész, arra a beszerelést vállaljuk.',
+  firstName: '',
+  timingShort: '1 munkanap',
+  quoteNo: 'Á-2026/0423',
+  vehicle: [
+    ['Típus',  'Ford Focus III 1.6 benzin, 2014'],
+    ['Km-óra', '131 000 km'],
+  ],
+  finding: 'Kuplungcsere az ügyfél által hozott 3 részes szettel (kinyomócsapággyal). Váltóolaj a műhelytől.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
