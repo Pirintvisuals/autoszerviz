@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instant Quote Demo</title>
+  <!-- Client sample. MP Autó és Klímaszerviz (Shopa Hungary Kft.), Szabó
+       Kálmán utca 74., 4030 Debrecen. Since 2012. Mo-P 8-17, Szo 8-12.
+       Szerelői verzió, copied from autoszerviz.html AFTER the 2026-10-07
+       template rules: the car is typed in (no VIN promise), the mechanic says
+       what he found, the tool never diagnoses or advises, it only asks what
+       splits the parts and adds extras as the SHOP's own rules. No phone or
+       symptom price case.
+
+       Own words on mpauto.hu: olajszerviz, autóklíma szerviz, fékszerviz,
+       akkumulátor csere, vezérműszíj csere, kuplung szerviz, futómű szerviz,
+       automata váltó olajcsere, dióhéjas tisztítás, vonóhorog szerviz,
+       műszaki állapotfelmérés. Márkafüggetlen (Audi, BMW, VW, Skoda, Toyota,
+       Hyundai-Kia, Renault...).
+
+       WHY KLÍMA. The business calls itself "Autó és Klímaszerviz" and lists
+       autóklíma first. The DM says the demo is built for THEIR shop, so the
+       page prices the job they lead with. What splits the parts on a klíma
+       repair is the gas (R134a or R1234yf) and the condenser grade, both asked
+       as questions, never decided by the tool. The szárítószűrő and the
+       fertőtlenítés are the shop's own rule lines.
+
+       All amounts are gross sample figures; the hourly rate is a placeholder.
+       Their real labour price list goes in when it is built for them. Their
+       site says 6 months warranty, the directory says parts 12: left off the
+       sheet on purpose until they confirm.
+
+       Theme off the logo: black circle, white lettering, red (#c81d1d).
+       Register: tegezés towards the mechanic, magázás in the CTA. -->
+  <link rel="stylesheet" href="/quote-agent.css">
+</head>
+<body>
+<div class="page-center" id="hero"></div>
+<div id="widget-root"></div>
+
+<script>
+// 1. THEME. Black and red, off the logo.
+const THEME = {
+  bg:'#0b0b0c', dark:'#1a1a1c', mid:'#3d3d41', brand:'#c81d1d', bright:'#e8464a',
+  dot:'#f5a3a5', chatBg:'#fff8f8', tint:'#fadcdc', tint2:'#fdeeee', line:'#f0d2d2',
+  ink:'#1a1a1c', inkSoft:'#a31616', ring:'rgba(200,29,29,0.40)', cta:'#f59e0b', cta2:'#d97706',
+}
+
+// 2. CONFIG.
+const CONFIG = {
+  mode: 'mechanic',
+  brand: {
+    name: 'MP Autó',
+    sub: 'Autóklíma, olajszerviz, fék, kuplung, vezérműszíj, futómű',
+    tagline: 'Márkafüggetlen autószerviz · Szabó Kálmán u. 74., Debrecen',
+    initial: 'M',
+    logoSrc: '/mp-autoszerviz-logo.png',
+    fbHandle: '',
+    online: 'Árajánlat-segéd · a műhelynek',
+  },
+  niche: 'autószerviz',
+  tooltip: 'Nézze meg, hogyan dolgozik vele a szerelő ▶',
+  currency: { symbol: ' Ft', locale: 'hu-HU', position: 'suffix' },
+  sendToOwnerLabel: 'Ajánlat megnyitása →',
+  calendly: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+  ctaTitle: 'Ez csak egy minta.',
+  ctaText: 'Szeretné, hogy ez az MP Autó saját óradíjával, árlistájával és munkáival számoljon?',
+  ctaButton: 'Beszéljünk 15 percet →',
+  ownerBenefit: 'Alkatrészt, munkaidőt és óradíjat nem kellett összeadni és begépelni: a tételes ajánlat magától állt össze.',
+  labels: {
+    titleSuffix: 'Árajánlat-segéd (minta)',
+    sampleBadge: 'Minta · nem élő rendszer',
+    watchHintPre: 'Koppintson a buborékra, magától lejátszódik, ',
+    watchHintBold: 'csak nézze',
+    watchHintPost: ' ↘',
+    replayTitle: 'Újrajátszás',
+    closeTitle: 'Bezárás',
+    sampleStrip: 'Minta: így használja a szerelő',
+    inputPlaceholder: 'Minta, nem kell gépelni',
+    estimateIntro: 'Kész az ajánlat',
+    estimateIntroSuffix: 'Nézd át, mielőtt odaadod:',
+    estimatedTotal: 'Végösszeg',
+    timing: 'Munkaidő',
+    estimatedQuote: 'Árajánlat',
+    bookCallFallback: 'Beszéljünk 15 percet →',
+    logoAlt: '{name} logó',
+    sheetKicker: 'Kész árajánlat · minta',
+    sheetTitle: 'Ezt adja oda az ügyfélnek',
+    sheetDoc: 'Árajánlat',
+    sheetVehicle: 'Jármű',
+    sheetFinding: 'Szerelői megállapítás',
+    sheetItems: 'Alkatrész és munkadíj',
+    sheetTotal: 'Végösszeg (bruttó)',
+    sheetNoContact: 'Se név, se telefonszám, se email nem kellett hozzá.',
+  },
+}
+
+// 3. MSGS. 'user' = the mechanic. The tool never diagnoses or advises: he says
+// what he found, it only asks what splits the parts (gas, grade) and adds the
+// extras the SHOP set up as rules.
+const MSGS = [
+  { r:'agent', t:'Szia! Melyik autó áll bent? Márka, típus, motor.' },
+  { r:'user',  t:'Toyota Auris 1.6 benzin, 2013, 164e km' },
+
+  { r:'agent', t:'Toyota Auris 1.6 benzin, 2013. Mi a munka?' },
+  { r:'user',  t:'Nem hűt a klíma. UV-val a kondenzátor szivárog, a kompresszor jó' },
+
+  // What splits the parts: asked, not decided.
+  { r:'agent', t:'Kondenzátorcsere. Milyen klímagáz van benne: R134a vagy R1234yf?' },
+  { r:'user',  t:'R134a' },
+
+  { r:'agent', t:'Melyik márkával számoljak a listádból: utángyártott, prémium (Valeo, Mahle) vagy gyári?' },
+  { r:'user',  t:'Prémium, Valeo' },
+
+  // The shop's own rule, not the program's opinion.
+  { r:'agent', t:'Nálatok klímajavításnál a szárítószűrő csere és a fertőtlenítés külön sorba kerül (ezt ti állítottátok be). Beírjam?' },
+  { r:'user',  t:'Igen' },
+
+  { r:'agent', t:'Összeraktam a te óradíjaddal és árlistáddal.' },
+  { r:'estimate' },
+]
+
+// 4. EST. Gross sample figures. 58 000 + 8 500 + 7 500 + 4 000 + 35 000 + 11 000.
+const EST = {
+  mid: 124_000,
+  items: [
+    { label:'Klímakondenzátor (prémium, Valeo)',                        amt: 58_000 },
+    { label:'Szárítószűrő',                                             amt:  8_500 },
+    { label:'Klímagáz R134a, 500 g',                                    amt:  7_500 },
+    { label:'Kompresszorolaj, UV-adalék, tömítőgyűrűk',                 amt:  4_000 },
+    { label:'Munkadíj: 2,5 óra × 14 000 Ft (csere, vákuum, töltés)',    amt: 35_000 },
+    { label:'Klíma fertőtlenítés, pollenszűrő (elhagyható)',            amt: 11_000 },
+  ],
+  note: 'Minta árakkal. A fertőtlenítés és a pollenszűrő külön tétel, elhagyható.',
+  firstName: '',
+  timingShort: 'kb. 3 óra',
+  quoteNo: 'Á-2026/0447',
+  vehicle: [
+    ['Típus',   'Toyota Auris 1.6 benzin, 2013'],
+    ['Km-óra',  '164 000 km'],
+    ['Klímagáz', 'R134a'],
+  ],
+  finding: 'Nem hűt a klíma. UV-s szivárgásvizsgálat: a klímakondenzátor szivárog, a kompresszor rendben. Kondenzátor és szárítószűrő csere, vákuumozás, R134a töltés.',
+}
+</script>
+<script src="/quote-agent.js"></script>
+</body>
+</html>
