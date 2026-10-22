@@ -30,7 +30,17 @@ le az `autoszerviz.html` fájlt `<szerviz-nev>.html` néven, és cseréld benne 
 | JAM Autójavító Kft., Budapest IV. (karosszéria, szerelői verzió) | `/jam-autojavito` |
 | MY Autószerviz, Budapest XXII. (hozott alkatrész, szerelői verzió) | `/my-autoszerviz` |
 | MP Autó és Klímaszerviz, Debrecen (klíma, szerelői verzió) | `/mp-autoszerviz` |
+| Tóth Garázs Kft., Salgótarján (BMW fék elöl, **új, önlejátszó sablon**) | `/toth-garazs` |
 | AnteCar Márkafüggetlen Autószerviz, Budapest X. (szerelői verzió, klíma a diagnosztika után + tünetre nem ad árat) | `/antecar` |
+
+## Új sablon: önlejátszó műhelyképernyő (2026-10-22-től)
+
+Ugyanaz a képernyő, mint az élő műhelyeszközé (autoszerviz-olajcsere): bal
+oldalt számozott kártyák (autó → munka → kérdések → alkatrészek → mellé járó
+tételek), jobb oldalt az épülő ajánlat, a végén a nyomtatható árajánlat.
+Magától lejátszódik, semmi nem kattintható. Új szervizhez másold le a
+`toth-garazs.html`-t: csak adat (`window.DEMO`) és a színek; a motor az
+`ajanlat-demo.js`, a stílus az `ajanlat-demo.css`. `?gyors` = háromszoros sebesség.
 
 ## Szerelői verzió (a sablon ezt adja, 2026-09-25-től)
 

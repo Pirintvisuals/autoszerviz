@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tóth Garázs · Árajánlat-segéd (minta)</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0b0b0c">
+  <!-- Client sample. Tóth Garázs Kft., Budapesti út 1., 3100 Salgótarján.
+       (70) 335 6244, tothgarazs@gmail.com. Logo: "prémium autó és
+       gumigyorsszerviz".
+
+       FIRST PAGE ON THE NEW TEMPLATE (2026-10-22): the self-playing copy of
+       the real workshop screen (ajanlat-demo.js + ajanlat-demo.css), not the
+       chat bubble. Data only - the engine builds the page.
+
+       WHY A BMW BRAKE JOB. The logo leads with "prémium autó", so the sample
+       prices a premium car. On a BMW the wear sensor is its own part and the
+       brake needs a CBS reset afterwards, so the questions are real ones a
+       mechanic would recognise. Which brake is fitted (normál / M Sport) is
+       what splits the discs; it is asked, never decided by the tool.
+
+       Template rules (2026-10-07): car typed in, no VIN promise; the tool
+       never diagnoses; extras are the shop's own rule; no supplier named.
+       All amounts are NET sample figures and the 15 000 Ft hourly rate is a
+       placeholder. Theme off the logo: black, red (#D7262E), white.
+       Register: tegezés toward the mechanic in the tool, magázás in the CTA. -->
+  <link rel="stylesheet" href="/ajanlat-demo.css">
+  <style>
+    :root {
+      --dark: #0b0b0c;
+      --accent: #D7262E; --accent-strong: #B01E25; --accent-ink: #B01E25;
+      --accent-rgb: 215,38,46; --on-accent: #FFFFFF; --warn-bg: #FDEDED;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) { --accent-ink: #F87171; --warn-bg: #2A1414; }
+    }
+    :root[data-theme="dark"] { --accent-ink: #F87171; --warn-bg: #2A1414; }
+  </style>
+</head>
+<body>
+<script>
+window.DEMO = {
+  intro: 'Minta a Tóth Garázs részére. Magától lejátszódik, csak nézze: így dolgozik vele a szerelő.',
+
+  shop: {
+    name: 'Tóth Garázs',
+    legalName: 'Tóth Garázs Kft.',
+    address: '3100 Salgótarján, Budapesti út 1.',
+    phone: '+36 70 335 6244',
+    logo: '/toth-garazs-logo.jpg',
+    rate: 15000,          // PLACEHOLDER: net Ft/óra, their real rate goes in
+    vat: 0.27,
+    quoteNo: '0187',
+  },
+
+  car: {
+    query: 'bmw 320d g20',
+    results: [
+      { t: 'BMW 3 (G20) 320 d', code: 'B47D20B', m: '2018– · dízel · 140 kW' },
+      { t: 'BMW 3 (G20) 320 d xDrive', code: 'B47D20B', m: '2019– · dízel · 140 kW' },
+      { t: 'BMW 3 (F30) 320 d', code: 'B47D20A', m: '2015–2019 · dízel · 140 kW' },
+    ],
+    pick: 0,
+    name: 'BMW 3 (G20) 320 d',
+    facts: 'Dízel · 140 kW · 2018– · Motorkód: <b class="mono">B47D20B</b>',
+  },
+
+  jobs: [
+    { label: 'Olajcsere', m: 'olaj, olajszűrő' },
+    { label: 'Kis szerviz', m: 'olaj + szűrők' },
+    { label: 'Fék elöl', m: 'betét, tárcsa, kopásjelző', pick: true },
+    { label: 'Fék hátul', m: 'betét, tárcsa, kopásjelző' },
+    { label: 'Gumiszerelés', m: '4 kerék, centírozás' },
+    { label: 'Szezonális gumicsere', m: 'garnitúra, TPMS' },
+    { label: 'Futómű-beállítás', m: 'geometria' },
+    { label: 'Akkumulátor', m: 'AGM, regisztrálás' },
+  ],
+
+  // Picking the job puts its base labour on the quote straight away.
+  job: {
+    label: 'Fék elöl',
+    lines: [{ key: 'work-brake', label: 'Munkadíj: fék elöl', hours: 1.2, sub: 'betétcsere · 1,2 óra × 15 000 Ft' }],
+  },
+
+  checks: [
+    { text: 'Tárcsa is megy, vagy csak betét?', why: 'Amit az autón látott: vetemedett, peremes vagy a minimum alatt.', pick: 1,
+      options: [{ label: 'Csak betét' },
+        { label: 'Tárcsa + betét', plus: 'Féktárcsa, +0,4 óra',
+          lines: [{ key: 'work-brake', label: 'Munkadíj: fék elöl', hours: 1.6, sub: 'tárcsa + betét · 1,6 óra × 15 000 Ft' }] }] },
+    { text: 'Új kopásjelző?', why: 'BMW-n külön cikk, a betéttel nem jön.', pick: 0,
+      options: [{ label: 'Igen, új', plus: 'Kopásjelző',
+          lines: [{ key: 'sensor', label: 'Kopásjelző, első', qty: 1, unit: 'db', price: 4600 }] },
+        { label: 'A régi marad' }] },
+    { text: 'Fékfolyadék-csere is?', why: 'Kétévente esedékes. Az iDrive szervizmenüjében is látszik.', pick: 0,
+      options: [{ label: 'Igen', plus: 'Fékfolyadék, +0,5 óra',
+          lines: [{ key: 'work-fluid', label: 'Munkadíj: fékfolyadék-csere', hours: 0.5 }] },
+        { label: 'Nem' }] },
+    { text: 'Szervizintervallum visszaállítás (CBS)?', why: 'BMW-n a fékcsere után diagnosztikával kell nullázni.', pick: 0,
+      options: [{ label: 'Igen', plus: '+0,2 óra',
+          lines: [{ key: 'work-cbs', label: 'CBS nullázás, diagnosztika', hours: 0.2 }] },
+        { label: 'Nem kell' }] },
+  ],
+
+  parts: [
+    {
+      label: 'Féktárcsa', qtyLabel: '2 db', icon: 'disc',
+      ask: { text: 'Melyik fék van rajta?', options: [{ v: 'Normál fék', n: 7 }, { v: 'M Sport fék', n: 4 }], pick: 0 },
+      why: 'a műhely márkája, ezt szereli be legtöbbször',
+      fits: 7,
+      list: [
+        { brand: 'Brembo', name: 'Féktárcsa, első', specs: ['normál fék', 'hűtött', 'első tengely'], price: 24500, shop: true, rec: true },
+        { brand: 'Zimmermann', name: 'Féktárcsa, első', specs: ['normál fék', 'hűtött', 'első tengely'], price: 22900 },
+        { brand: 'ATE', name: 'Féktárcsa, első', specs: ['normál fék', 'hűtött', 'első tengely'], price: 21800 },
+      ],
+      line: { key: 'disc', label: 'Féktárcsa, első (Brembo)', sub: 'normál fék · hűtött', qty: 2, unit: 'db', price: 24500 },
+    },
+    {
+      label: 'Fékbetét', qtyLabel: '1 készlet', icon: 'pad',
+      why: 'a műhely márkája, a normál fékhez illik',
+      fits: 9,
+      list: [
+        { brand: 'Textar', name: 'Fékbetétkészlet, első', specs: ['normál fékhez', 'kopásjelző külön'], price: 21500, shop: true, rec: true },
+        { brand: 'Brembo', name: 'Fékbetétkészlet, első', specs: ['normál fékhez', 'kopásjelző külön'], price: 23900 },
+        { brand: 'ATE', name: 'Fékbetétkészlet, első', specs: ['normál fékhez', 'kopásjelző külön'], price: 19800 },
+      ],
+      line: { key: 'pad', label: 'Fékbetétkészlet, első (Textar)', sub: 'normál fékhez', qty: 1, unit: 'klt', price: 21500 },
+    },
+  ],
+
+  extras: [
+    { label: 'Fékfolyadék DOT4 LV', m: '1 l · 3 900 Ft/l · mert kérte a cserét', on: true,
+      line: { key: 'fluid', label: 'Fékfolyadék DOT4 LV', qty: 1, unit: 'l', price: 3900 } },
+    { label: 'Féktisztító spray', m: '1 db · 1 800 Ft/db · minden fékmunkához', on: true,
+      line: { key: 'cleaner', label: 'Féktisztító spray', qty: 1, unit: 'db', price: 1800 } },
+    { label: 'Fékpatkó-kenőpaszta', m: '1 db · 1 200 Ft/db · csak ha kéri', on: false },
+  ],
+  extrasBanner: '5. Ami a Tóth Garázsnál minden fékmunkához jár, magától bekerül.',
+
+  customer: { name: 'Kovács Gábor', plate: 'RKM-218' },
+
+  cta: {
+    title: 'A sajátjában az Önök óradíja, árlistája és márkái lesznek.',
+    text: 'Az alkatrész, a munkaidő és az ÁFA nem kézzel lett összeadva és begépelve: a tételes ajánlat magától állt össze. Önöknek semmit nem kell beállítaniuk, én építem meg. A mintában az én becsült számaim vannak.',
+    button: 'Beszéljünk 15 percet →',
+    href: 'https://calendly.com/pirint-milan/quoting-agent-sample',
+    phone: '06 70 250 1739',
+  },
+};
+</script>
+<script src="/ajanlat-demo.js"></script>
+</body>
+</html>
